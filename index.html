@@ -1,0 +1,2121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>PartSearch — Biomedical Parts &amp; Inventory</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #090d16;
+      color: #f1f5f9;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tab-active {
+      background-color: #4f46e5;
+      color: #ffffff;
+      border-color: #6366f1;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #0f172a;
+      border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-32 selection:bg-indigo-500 selection:text-white">
+
+  <!-- Toast Notification Banner -->
+  <div id="toastBanner" class="hidden fixed top-16 left-1/2 -translate-x-1/2 z-[60] px-4 py-2.5 rounded-2xl bg-indigo-600 text-white text-xs font-bold shadow-2xl border border-indigo-400/40 max-w-[92vw] text-center"></div>
+
+  <!-- Top Navigation & Team Controls -->
+  <header class="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80">
+    <div class="max-w-5xl mx-auto px-3 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/30">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-white">PartSearch</h1>
+            <span id="syncStatusPill" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span id="syncStatusText">Live Ready</span>
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-400">Biomedical Stock, Locations &amp; Team Log</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <button id="openTeamRoomBtn" type="button" class="px-2.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-xs font-semibold text-slate-200 flex items-center gap-1.5 transition">
+          <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+          <span id="activeMemberLabel">Tech (BIOMED-TEAM-01)</span>
+        </button>
+
+        <button id="lockTeamGateBtn" type="button" class="px-2.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-xs font-semibold text-rose-300 flex items-center gap-1 transition" title="Lock Team Access">
+          <span>Lock</span>
+        </button>
+
+        <button id="openActivityLogBtn" type="button" class="px-2.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-xs font-semibold text-amber-300 flex items-center gap-1.5 transition">
+          <span>Activity Log</span>
+          <span id="activityBadgeCount" class="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-200 text-[10px] font-bold">0</span>
+        </button>
+
+        <button id="openAddModalBtn" type="button" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-xs sm:text-sm font-bold text-white shadow-lg shadow-indigo-600/25 transition">
+          + Add Part
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-3 sm:px-6 pt-4 space-y-4">
+
+    <!-- Summary Metrics Bar -->
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3">
+        <p class="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Total Part SKUs</p>
+        <p id="statTotalSkus" class="text-xl sm:text-2xl font-extrabold text-white mt-0.5">0</p>
+      </div>
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3">
+        <p class="text-[11px] uppercase tracking-wider text-emerald-400 font-semibold">Parts Available (Left)</p>
+        <p id="statAvailableUnits" class="text-xl sm:text-2xl font-extrabold text-emerald-300 mt-0.5">0</p>
+      </div>
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3">
+        <p class="text-[11px] uppercase tracking-wider text-sky-400 font-semibold">Total Parts Used</p>
+        <p id="statUsedUnits" class="text-xl sm:text-2xl font-extrabold text-sky-300 mt-0.5">0</p>
+      </div>
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3">
+        <p class="text-[11px] uppercase tracking-wider text-amber-400 font-semibold">Always Stock / Zero</p>
+        <p class="text-xl sm:text-2xl font-extrabold text-amber-300 mt-0.5">
+          <span id="statAlwaysStock">0</span> <span class="text-xs font-medium text-slate-500">/</span> <span id="statZeroStock" class="text-rose-400">0</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- Instant Search, Filter Tabs & Backup Tools -->
+    <section class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 sm:p-4 space-y-3">
+      <div class="relative flex items-center">
+        <svg class="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+        </svg>
+        <input id="searchInput" type="search" placeholder="Search part #, name, location (CHN, NWSH, CHS, SCO, SHO), WO#, or asset#..." class="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-950 border border-slate-700/90 focus:border-indigo-500 text-sm text-white placeholder-slate-500 outline-none" />
+        <button id="clearSearchBtn" type="button" class="hidden absolute right-3 text-xs font-bold text-slate-400 hover:text-white px-1.5 py-0.5 rounded-md bg-slate-800">✕</button>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button type="button" data-filter="all" class="filter-tab tab-active px-3 py-1.5 rounded-xl border border-slate-700 text-xs font-bold transition">All</button>
+          <button type="button" data-filter="New Parts" class="filter-tab px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 transition">New Parts</button>
+          <button type="button" data-filter="Existing Parts" class="filter-tab px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 transition">Existing Parts</button>
+          <button type="button" data-filter="always" class="filter-tab px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-amber-300 transition">Always Stock</button>
+          <button type="button" data-filter="used" class="filter-tab px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-sky-300 transition">Parts Used</button>
+          <button type="button" data-filter="zero" class="filter-tab px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-rose-300 transition">Zero / Out</button>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <button id="exportJsonBtn" type="button" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-bold text-slate-200">JSON</button>
+          <button id="exportCsvBtn" type="button" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-bold text-slate-200">CSV</button>
+          <button id="importBackupBtn" type="button" class="px-2.5 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-[11px] font-bold text-indigo-300">Import</button>
+          <input id="importFileInput" type="file" accept=".json,application/json" class="hidden" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Parts Grid -->
+    <section id="partsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></section>
+
+    <!-- Empty State -->
+    <div id="emptyStateBox" class="hidden bg-slate-900/70 border border-slate-800 rounded-2xl p-8 text-center space-y-2">
+      <p class="text-sm font-bold text-white">No matching parts found</p>
+      <p class="text-xs text-slate-400">Try another part number, location, or filter, or click <strong class="text-indigo-300">+ Add Part</strong> to create one.</p>
+    </div>
+
+  </main>
+
+  <!-- Sticky Bottom Undo & Submit Staging Bar -->
+  <div class="fixed bottom-0 inset-x-0 z-30 bg-slate-950/95 backdrop-blur-md border-t border-slate-800">
+    <div class="max-w-5xl mx-auto px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span id="pendingDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+        <span id="pendingSummaryText" class="text-xs font-semibold text-slate-300">All changes submitted &amp; saved</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="revertLastSubmitBtn" type="button" class="hidden px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-amber-300">
+          Revert Last Submit
+        </button>
+        <button id="undoPendingBtn" type="button" disabled class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:pointer-events-none border border-slate-700 text-xs font-bold text-slate-200 transition">
+          Undo
+        </button>
+        <button id="submitPendingBtn" type="button" disabled class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:pointer-events-none text-xs font-extrabold text-white shadow-lg shadow-emerald-600/25 transition">
+          Submit Changes
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Team Access Gate Modal (NOBLEMED6 + Email, User ID & Passcode + Email OTP Forgot Passcode) -->
+  <div id="teamAccessModal" class="hidden fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-slate-900 border border-indigo-500/40 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+      <div class="space-y-1">
+        <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Team Access Only</span>
+        <h2 id="gateTitle" class="text-lg font-extrabold text-white">Team Sign In &amp; Access</h2>
+        <p id="gateSubtitle" class="text-xs text-slate-400">Enter your name, team access code, and your personal User ID &amp; passcode.</p>
+      </div>
+
+      <!-- Mode Switch Tabs -->
+      <div id="gateModeTabs" class="grid grid-cols-2 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+        <button id="tabSignInMode" type="button" class="py-2 rounded-lg text-xs font-bold bg-indigo-600 text-white transition">Sign In</button>
+        <button id="tabCreateAccountMode" type="button" class="py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition">Create ID &amp; Passcode</button>
+      </div>
+
+      <!-- Sign In / Create Account Form -->
+      <form id="teamAccessForm" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Your Name</label>
+          <input id="gateMemberNameInput" type="text" required autocomplete="name" placeholder="e.g., Ethan, John, Tanner, Shelby" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-indigo-500 text-sm text-white outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Your Email Address (Login, Sign-Up &amp; OTP Reset)</label>
+          <input id="gateEmailInput" type="email" required autocomplete="email" placeholder="e.g., ethan@noblemed.com" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-indigo-500 text-sm text-white outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Team Access Code</label>
+          <input id="accessCodeInput" type="password" required autocomplete="off" placeholder="Enter team access code" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-indigo-500 text-sm font-bold text-white tracking-wider uppercase outline-none" />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Your User ID</label>
+            <input id="gateUserIdInput" type="text" required autocomplete="username" placeholder="e.g., ethan.biomed" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-indigo-500 text-sm text-white outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Your Passcode</label>
+            <input id="gatePasscodeInput" type="password" required autocomplete="current-password" placeholder="4+ char passcode" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-indigo-500 text-sm text-white outline-none" />
+          </div>
+        </div>
+
+        <div id="confirmPasscodeBox" class="hidden">
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Confirm Your Passcode</label>
+          <input id="gateConfirmPasscodeInput" type="password" autocomplete="new-password" placeholder="Re-enter passcode" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-indigo-500 text-sm text-white outline-none" />
+        </div>
+
+        <div class="flex items-center justify-between pt-0.5">
+          <button id="openForgotPasscodeBtn" type="button" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 underline">
+            Forgot Passcode? (Email OTP)
+          </button>
+          <span class="text-[11px] text-slate-500">Room: <strong id="gateRoomPreview" class="text-slate-300">BIOMED-TEAM-01</strong></span>
+        </div>
+
+        <p id="accessCodeError" class="hidden text-xs font-semibold text-rose-400"></p>
+
+        <button id="gateSubmitBtn" type="submit" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-bold text-white shadow-lg shadow-indigo-600/25 transition">
+          Unlock &amp; Sign In
+        </button>
+      </form>
+
+      <!-- Forgot Passcode Reset Form with Email OTP Verification -->
+      <form id="forgotPasscodeForm" class="hidden space-y-3 bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-amber-300">Reset Passcode via Email OTP</h3>
+          <button id="backToSignInBtn" type="button" class="text-xs font-semibold text-slate-400 hover:text-white">← Back</button>
+        </div>
+        <p class="text-[11px] text-slate-400">Enter your Team Access Code, User ID, and the Email you used when signing up to receive a 6-digit OTP.</p>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Team Access Code</label>
+          <input id="resetAccessCodeInput" type="password" required placeholder="Enter team access code" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-white uppercase outline-none" />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Existing User ID</label>
+            <input id="resetUserIdInput" type="text" required placeholder="Enter your User ID" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Registered Sign-Up Email</label>
+            <input id="resetEmailInput" type="email" required placeholder="name@company.com" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-2 pt-0.5">
+          <button id="sendResetOtpBtn" type="button" class="px-3 py-2 rounded-xl bg-indigo-600/25 hover:bg-indigo-600/40 border border-indigo-500/40 text-xs font-bold text-indigo-200 transition">
+            Send OTP to Email
+          </button>
+          <span id="otpSentBadge" class="hidden px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-[11px] font-bold text-emerald-300"></span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">6-Digit Email OTP</label>
+            <input id="resetOtpCodeInput" type="text" inputmode="numeric" maxlength="6" required placeholder="e.g., 482910" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold tracking-widest text-white outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">New Passcode</label>
+            <input id="resetNewPasscodeInput" type="password" required placeholder="4+ char passcode" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none" />
+          </div>
+        </div>
+
+        <p id="resetPasscodeMsg" class="hidden text-xs font-semibold"></p>
+        <button type="submit" class="w-full py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-xs font-bold text-white transition">
+          Verify OTP &amp; Save New Passcode
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 1: Add / Edit Part Modal -->
+  <div id="addPartModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-xl max-h-[92vh] overflow-y-auto custom-scroll p-4 sm:p-6 shadow-2xl space-y-4">
+      <div class="flex items-start justify-between gap-2 border-b border-slate-800 pb-3">
+        <div>
+          <h2 id="addPartModalTitle" class="text-base sm:text-lg font-extrabold text-white">Add Part to Search Catalog</h2>
+          <p class="text-xs text-slate-400">Photo &amp; OCR are optional — enter part number, stock, and location</p>
+        </div>
+        <button id="closeAddModalBtn" type="button" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300">✕</button>
+      </div>
+
+      <form id="addPartForm" class="space-y-4">
+        <input id="editingPartIdInput" type="hidden" />
+
+        <!-- Optional Photo & OCR Section -->
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-2.5">
+          <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Part Photo &amp; Label OCR (Optional)</p>
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="triggerPhotoBtn" type="button" class="px-3 py-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-xs font-semibold text-indigo-300">
+              Snap / Upload Photo (Optional)
+            </button>
+            <button id="runOcrBtn" type="button" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200">
+              Scan Part #
+            </button>
+            <input id="partPhotoInput" type="file" accept="image/*" capture="environment" class="hidden" />
+          </div>
+
+          <div id="draftPhotoPreviewBox" class="hidden flex items-center gap-3 pt-1">
+            <img id="draftPhotoImg" src="" alt="Part preview" class="w-16 h-16 rounded-xl object-cover border border-slate-700" />
+            <button id="removeDraftPhotoBtn" type="button" class="px-2.5 py-1.5 rounded-lg bg-rose-500/15 border border-rose-500/30 text-xs font-semibold text-rose-300">
+              Remove Photo
+            </button>
+          </div>
+
+          <div id="ocrStatusBox" class="hidden space-y-1.5">
+            <p id="ocrStatusText" class="text-[11px] text-indigo-300 font-medium"></p>
+            <div id="ocrChipsContainer" class="flex flex-wrap gap-1.5"></div>
+          </div>
+        </div>
+
+        <!-- Part Number & Category -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Part Number <span class="text-rose-400">*</span></label>
+            <input id="partNumberInput" type="text" required placeholder="e.g., M4532-60A" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-indigo-500 text-sm font-bold text-white uppercase outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Category</label>
+            <select id="partCategorySelect" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-indigo-500 text-sm text-white outline-none">
+              <option value="New Parts">New Parts</option>
+              <option value="Existing Parts">Existing Parts</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Part Name / Description</label>
+          <input id="partNameInput" type="text" placeholder="e.g., 1/4 in. Brass Nipple Fitting" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-indigo-500 text-sm text-white outline-none" />
+        </div>
+
+        <!-- Quantities & Auto-Calculated Left Preview -->
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label id="qtyAvailableLabel" class="block text-xs font-semibold text-slate-300 mb-1">Total Quantity Received / Available</label>
+              <input id="qtyAvailableInput" type="number" min="0" value="1" class="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 focus:border-indigo-500 text-sm font-bold text-white outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-sky-300 mb-1">Number of Parts Used</label>
+              <input id="qtyUsedInput" type="number" min="0" value="0" class="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 focus:border-sky-500 text-sm font-bold text-sky-200 outline-none" />
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-xs bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-2">
+            <span class="text-slate-400">Calculated Stock Left:</span>
+            <span id="netStockPreviewText" class="font-extrabold text-emerald-300">1 part left</span>
+          </div>
+          <label class="flex items-center gap-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 cursor-pointer">
+            <input id="alwaysStockCheckbox" type="checkbox" class="w-4 h-4 rounded accent-amber-500" />
+            <span class="text-xs font-semibold text-amber-200">Always Stock (Reorder Regardless of Work Order)</span>
+          </label>
+        </div>
+
+        <!-- Current Part Location (Scrollable + Add) -->
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold text-slate-300">Current Part Location (Scrollable)</label>
+            <button id="toggleAddCurrentLocBtn" type="button" class="text-xs font-bold text-indigo-400 hover:text-indigo-300">+ Add Location</button>
+          </div>
+          <select id="currentLocationSelect" size="3" class="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white outline-none custom-scroll"></select>
+          <div id="addCurrentLocBox" class="hidden flex items-center gap-2 pt-1">
+            <input id="newCurrentLocInput" type="text" placeholder="Enter new location (e.g., Van 2, Shelf B)" class="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none" />
+            <button id="saveNewCurrentLocBtn" type="button" class="px-3 py-2 rounded-xl bg-indigo-600 text-xs font-bold text-white">Add</button>
+          </div>
+        </div>
+
+        <!-- Last Used Details (Overwrites Old Values) -->
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-3">
+          <div class="flex items-center justify-between">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Last Used Details (Overwrites Old Values)</p>
+            <button id="toggleAddLastLocBtn" type="button" class="text-xs font-bold text-indigo-400 hover:text-indigo-300">+ Add Location</button>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Last Used Location (Scrollable)</label>
+            <select id="lastUsedLocationSelect" size="3" class="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white outline-none custom-scroll"></select>
+            <div id="addLastLocBox" class="hidden flex items-center gap-2 pt-2">
+              <input id="newLastLocInput" type="text" placeholder="Add facility (e.g., OKC, TUL)" class="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none" />
+              <button id="saveNewLastLocBtn" type="button" class="px-3 py-2 rounded-xl bg-indigo-600 text-xs font-bold text-white">Add</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Last Work Order #</label>
+              <input id="lastWoInput" type="text" placeholder="e.g., WO-48210" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white uppercase outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Last Asset #</label>
+              <input id="lastAssetInput" type="text" placeholder="e.g., AST-9032" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white uppercase outline-none" />
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+          <button id="cancelAddModalBtn" type="button" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200">Cancel</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs sm:text-sm font-bold text-white shadow-lg shadow-indigo-600/25">Save Part to Catalog</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Quick Update Last Used Location / WO / Asset (Overwrites Previous Values) -->
+  <div id="usageUpdateModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg p-4 sm:p-6 shadow-2xl space-y-4">
+      <div class="flex items-start justify-between gap-2 border-b border-slate-800 pb-3">
+        <div>
+          <h3 id="usageModalTitle" class="text-base font-extrabold text-white">Update Usage &amp; Location</h3>
+          <p class="text-xs text-amber-300">Saving replaces old Last Used Location, WO#, and Asset#</p>
+        </div>
+        <button id="closeUsageModalBtn" type="button" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300">✕</button>
+      </div>
+
+      <form id="usageUpdateForm" class="space-y-3">
+        <input id="usagePartIdInput" type="hidden" />
+
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold text-slate-300">Current Part Location</label>
+            <button id="usageToggleAddCurrentLocBtn" type="button" class="text-xs font-bold text-indigo-400">+ Add Location</button>
+          </div>
+          <select id="usageCurrentLocationSelect" size="3" class="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white outline-none custom-scroll"></select>
+          <div id="usageAddCurrentLocBox" class="hidden flex items-center gap-2 pt-1">
+            <input id="usageNewCurrentLocInput" type="text" placeholder="New location..." class="flex-1 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none" />
+            <button id="usageSaveNewCurrentLocBtn" type="button" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-xs font-bold text-white">Add</button>
+          </div>
+        </div>
+
+        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold text-slate-300">Last Used Location (Overwrites Old)</label>
+            <button id="usageToggleAddLastLocBtn" type="button" class="text-xs font-bold text-indigo-400">+ Add Location</button>
+          </div>
+          <select id="usageLastLocationSelect" size="3" class="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white outline-none custom-scroll"></select>
+          <div id="usageAddLastLocBox" class="hidden flex items-center gap-2 pt-1">
+            <input id="usageNewLastLocInput" type="text" placeholder="New facility..." class="flex-1 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none" />
+            <button id="usageSaveNewLastLocBtn" type="button" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-xs font-bold text-white">Add</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Last Work Order # (Overwrites Old)</label>
+            <input id="usageLastWoInput" type="text" placeholder="e.g., WO-55102" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white uppercase outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Last Asset # (Overwrites Old)</label>
+            <input id="usageLastAssetInput" type="text" placeholder="e.g., AST-1104" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white uppercase outline-none" />
+          </div>
+        </div>
+
+        <label class="flex items-center gap-2 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 cursor-pointer">
+          <input id="usageDeductOneCheckbox" type="checkbox" class="w-4 h-4 rounded accent-rose-500" />
+          <span class="text-xs font-semibold text-rose-200">Also deduct 1 unit (-1 Available, +1 Parts Used)</span>
+        </label>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+          <button id="cancelUsageModalBtn" type="button" class="px-4 py-2 rounded-xl bg-slate-800 text-xs font-semibold text-slate-200">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white">Overwrite &amp; Stage</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Team Member & Shared Room Settings -->
+  <div id="teamRoomModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-base font-extrabold text-white">Team Member &amp; Live Room</h3>
+        <button id="closeTeamRoomModalBtn" type="button" class="p-2 rounded-xl bg-slate-800 text-slate-300">✕</button>
+      </div>
+      <form id="teamRoomForm" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Your Name (Recorded in Activity Log)</label>
+          <input id="memberNameInput" type="text" required placeholder="e.g., Ethan, John, Tanner, Shelby" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Shared Team Room Code</label>
+          <input id="teamRoomCodeInput" type="text" required placeholder="e.g., BIOMED-TEAM-01" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white uppercase outline-none" />
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
+          <button id="copyTeamLinkBtn" type="button" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-indigo-300">
+            Copy Team Share Link
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white">
+            Save &amp; Join Room
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 4: Active Team Sessions & Modification Log -->
+  <div id="activityLogModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[88vh] flex flex-col p-4 sm:p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h3 class="text-base sm:text-lg font-extrabold text-white">Team Active Sessions &amp; Modification Log</h3>
+          <p class="text-xs text-slate-400">Tracks who entered, entry time, active duration, and every submitted change</p>
+        </div>
+        <button id="closeActivityLogModalBtn" type="button" class="p-2 rounded-xl bg-slate-800 text-slate-300">✕</button>
+      </div>
+
+      <div class="overflow-y-auto custom-scroll space-y-4 pr-1">
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">Active &amp; Recent Team Sessions</h4>
+          <div id="activeSessionsList" class="space-y-2"></div>
+        </div>
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-rose-400 mb-2">Login, Sign-Up &amp; Reset Audit Log</h4>
+          <div id="loginAuditLogsList" class="space-y-2"></div>
+        </div>
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2">Submitted Part Modifications</h4>
+          <div id="modificationLogsList" class="space-y-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo Lightbox -->
+  <div id="photoLightbox" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
+    <div class="relative max-w-lg w-full bg-slate-900 border border-slate-700 rounded-2xl p-3 space-y-2">
+      <img id="lightboxImg" src="" alt="Full part photo" class="w-full max-h-[75vh] object-contain rounded-xl" />
+      <button id="closeLightboxBtn" type="button" class="w-full py-2 rounded-xl bg-slate-800 text-xs font-bold text-white">Close Photo</button>
+    </div>
+  </div>
+
+  <script>
+    // Default Seed Inventory & Location Lists
+    const TEAM_ACCESS_CODE = 'NOBLEMED6';
+    const DEFAULT_CURRENT_LOCATIONS = ['Warehouse', 'CHN', 'CHS'];
+    const DEFAULT_LAST_LOCATIONS = ['CHN', 'NWSH', 'CHS', 'SCO', 'SHO'];
+
+    const SAMPLE_PARTS = [
+      {
+        id: 'part-demo-1',
+        partNumber: 'M4532-60A',
+        name: 'SpO2 Extension Sensor Cable (8-Pin)',
+        category: 'New Parts',
+        qtyAvailable: 4,
+        qtyUsed: 1,
+        alwaysStock: false,
+        currentLocation: 'Warehouse',
+        lastUsedLocation: 'CHN',
+        lastWoNumber: 'WO-48109',
+        lastAssetNumber: 'AST-3021',
+        photoDataUrl: null,
+        updatedBy: 'Ethan',
+        updatedAt: Date.now() - 3600000,
+      },
+      {
+        id: 'part-demo-2',
+        partNumber: 'BR-NPT-025',
+        name: '1/4 in. Brass Nipple Fitting',
+        category: 'Existing Parts',
+        qtyAvailable: 6,
+        qtyUsed: 2,
+        alwaysStock: true,
+        currentLocation: 'Warehouse',
+        lastUsedLocation: 'NWSH',
+        lastWoNumber: 'WO-48144',
+        lastAssetNumber: 'AST-1180',
+        photoDataUrl: null,
+        updatedBy: 'John',
+        updatedAt: Date.now() - 1800000,
+      },
+      {
+        id: 'part-demo-3',
+        partNumber: 'CU-TUBE-38',
+        name: '3/8 in. Annealed Copper Tubing Coil',
+        category: 'Existing Parts',
+        qtyAvailable: 2,
+        qtyUsed: 3,
+        alwaysStock: true,
+        currentLocation: 'CHN',
+        lastUsedLocation: 'SCO',
+        lastWoNumber: 'WO-48201',
+        lastAssetNumber: 'AST-4410',
+        photoDataUrl: null,
+        updatedBy: 'Tanner',
+        updatedAt: Date.now() - 900000,
+      },
+      {
+        id: 'part-demo-4',
+        partNumber: 'VLV-REL-90',
+        name: 'High-Pressure Relief Valve Assembly',
+        category: 'New Parts',
+        qtyAvailable: 0,
+        qtyUsed: 2,
+        alwaysStock: true,
+        currentLocation: 'CHS',
+        lastUsedLocation: 'SHO',
+        lastWoNumber: 'WO-48215',
+        lastAssetNumber: 'AST-7790',
+        photoDataUrl: null,
+        updatedBy: 'Shelby',
+        updatedAt: Date.now() - 300000,
+      }
+    ];
+
+    // Application State
+    let committedParts = [];
+    let pendingParts = [];
+    let undoStack = [];
+    let pendingLogs = [];
+    let lastSubmittedSnapshot = null;
+
+    let currentLocations = [...DEFAULT_CURRENT_LOCATIONS];
+    let lastLocations = [...DEFAULT_LAST_LOCATIONS];
+    let modificationLogs = [];
+    let loginAuditLogs = [];
+    let teamSessions = [];
+
+    let activeSearchQuery = '';
+    let activeFilter = 'all';
+    let draftPartPhoto = null;
+    let activeResetOtp = null;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentTeamRoom = (urlParams.get('room') || localStorage.getItem('ps_team_room') || 'BIOMED-TEAM-01').toUpperCase();
+    let currentMemberName = localStorage.getItem('ps_member_name') || 'Biomed Tech';
+    let currentUserId = localStorage.getItem('ps_user_id') || '';
+    let currentUserEmail = localStorage.getItem('ps_user_email') || '';
+    const currentSessionId = 'sess-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+    const sessionEnteredAt = Date.now();
+    let gateMode = 'signin';
+
+    const dom = {
+      searchInput: document.getElementById('searchInput'),
+      clearSearchBtn: document.getElementById('clearSearchBtn'),
+      filterTabs: document.querySelectorAll('.filter-tab'),
+      partsGrid: document.getElementById('partsGrid'),
+      emptyStateBox: document.getElementById('emptyStateBox'),
+
+      statTotalSkus: document.getElementById('statTotalSkus'),
+      statAvailableUnits: document.getElementById('statAvailableUnits'),
+      statUsedUnits: document.getElementById('statUsedUnits'),
+      statAlwaysStock: document.getElementById('statAlwaysStock'),
+      statZeroStock: document.getElementById('statZeroStock'),
+
+      activeMemberLabel: document.getElementById('activeMemberLabel'),
+      activityBadgeCount: document.getElementById('activityBadgeCount'),
+
+      openAddModalBtn: document.getElementById('openAddModalBtn'),
+      addPartModal: document.getElementById('addPartModal'),
+      addPartModalTitle: document.getElementById('addPartModalTitle'),
+      closeAddModalBtn: document.getElementById('closeAddModalBtn'),
+      cancelAddModalBtn: document.getElementById('cancelAddModalBtn'),
+      addPartForm: document.getElementById('addPartForm'),
+      editingPartIdInput: document.getElementById('editingPartIdInput'),
+      partNumberInput: document.getElementById('partNumberInput'),
+      partCategorySelect: document.getElementById('partCategorySelect'),
+      partNameInput: document.getElementById('partNameInput'),
+      qtyAvailableLabel: document.getElementById('qtyAvailableLabel'),
+      qtyAvailableInput: document.getElementById('qtyAvailableInput'),
+      qtyUsedInput: document.getElementById('qtyUsedInput'),
+      netStockPreviewText: document.getElementById('netStockPreviewText'),
+      alwaysStockCheckbox: document.getElementById('alwaysStockCheckbox'),
+
+      currentLocationSelect: document.getElementById('currentLocationSelect'),
+      toggleAddCurrentLocBtn: document.getElementById('toggleAddCurrentLocBtn'),
+      addCurrentLocBox: document.getElementById('addCurrentLocBox'),
+      newCurrentLocInput: document.getElementById('newCurrentLocInput'),
+      saveNewCurrentLocBtn: document.getElementById('saveNewCurrentLocBtn'),
+
+      lastUsedLocationSelect: document.getElementById('lastUsedLocationSelect'),
+      toggleAddLastLocBtn: document.getElementById('toggleAddLastLocBtn'),
+      addLastLocBox: document.getElementById('addLastLocBox'),
+      newLastLocInput: document.getElementById('newLastLocInput'),
+      saveNewLastLocBtn: document.getElementById('saveNewLastLocBtn'),
+      lastWoInput: document.getElementById('lastWoInput'),
+      lastAssetInput: document.getElementById('lastAssetInput'),
+
+      triggerPhotoBtn: document.getElementById('triggerPhotoBtn'),
+      partPhotoInput: document.getElementById('partPhotoInput'),
+      draftPhotoPreviewBox: document.getElementById('draftPhotoPreviewBox'),
+      draftPhotoImg: document.getElementById('draftPhotoImg'),
+      removeDraftPhotoBtn: document.getElementById('removeDraftPhotoBtn'),
+      runOcrBtn: document.getElementById('runOcrBtn'),
+      ocrStatusBox: document.getElementById('ocrStatusBox'),
+      ocrStatusText: document.getElementById('ocrStatusText'),
+      ocrChipsContainer: document.getElementById('ocrChipsContainer'),
+
+      usageUpdateModal: document.getElementById('usageUpdateModal'),
+      usageModalTitle: document.getElementById('usageModalTitle'),
+      closeUsageModalBtn: document.getElementById('closeUsageModalBtn'),
+      cancelUsageModalBtn: document.getElementById('cancelUsageModalBtn'),
+      usageUpdateForm: document.getElementById('usageUpdateForm'),
+      usagePartIdInput: document.getElementById('usagePartIdInput'),
+      usageCurrentLocationSelect: document.getElementById('usageCurrentLocationSelect'),
+      usageToggleAddCurrentLocBtn: document.getElementById('usageToggleAddCurrentLocBtn'),
+      usageAddCurrentLocBox: document.getElementById('usageAddCurrentLocBox'),
+      usageNewCurrentLocInput: document.getElementById('usageNewCurrentLocInput'),
+      usageSaveNewCurrentLocBtn: document.getElementById('usageSaveNewCurrentLocBtn'),
+      usageLastLocationSelect: document.getElementById('usageLastLocationSelect'),
+      usageToggleAddLastLocBtn: document.getElementById('usageToggleAddLastLocBtn'),
+      usageAddLastLocBox: document.getElementById('usageAddLastLocBox'),
+      usageNewLastLocInput: document.getElementById('usageNewLastLocInput'),
+      usageSaveNewLastLocBtn: document.getElementById('usageSaveNewLastLocBtn'),
+      usageLastWoInput: document.getElementById('usageLastWoInput'),
+      usageLastAssetInput: document.getElementById('usageLastAssetInput'),
+      usageDeductOneCheckbox: document.getElementById('usageDeductOneCheckbox'),
+
+      pendingDot: document.getElementById('pendingDot'),
+      pendingSummaryText: document.getElementById('pendingSummaryText'),
+      revertLastSubmitBtn: document.getElementById('revertLastSubmitBtn'),
+      undoPendingBtn: document.getElementById('undoPendingBtn'),
+      submitPendingBtn: document.getElementById('submitPendingBtn'),
+
+      openTeamRoomBtn: document.getElementById('openTeamRoomBtn'),
+      lockTeamGateBtn: document.getElementById('lockTeamGateBtn'),
+      teamAccessModal: document.getElementById('teamAccessModal'),
+      gateTitle: document.getElementById('gateTitle'),
+      gateSubtitle: document.getElementById('gateSubtitle'),
+      tabSignInMode: document.getElementById('tabSignInMode'),
+      tabCreateAccountMode: document.getElementById('tabCreateAccountMode'),
+      teamAccessForm: document.getElementById('teamAccessForm'),
+      gateMemberNameInput: document.getElementById('gateMemberNameInput'),
+      gateEmailBox: document.getElementById('gateEmailBox'),
+      gateEmailInput: document.getElementById('gateEmailInput'),
+      accessCodeInput: document.getElementById('accessCodeInput'),
+      gateUserIdInput: document.getElementById('gateUserIdInput'),
+      gatePasscodeInput: document.getElementById('gatePasscodeInput'),
+      confirmPasscodeBox: document.getElementById('confirmPasscodeBox'),
+      gateConfirmPasscodeInput: document.getElementById('gateConfirmPasscodeInput'),
+      gateRoomPreview: document.getElementById('gateRoomPreview'),
+      gateSubmitBtn: document.getElementById('gateSubmitBtn'),
+      accessCodeError: document.getElementById('accessCodeError'),
+      openForgotPasscodeBtn: document.getElementById('openForgotPasscodeBtn'),
+      forgotPasscodeForm: document.getElementById('forgotPasscodeForm'),
+      backToSignInBtn: document.getElementById('backToSignInBtn'),
+      resetAccessCodeInput: document.getElementById('resetAccessCodeInput'),
+      resetUserIdInput: document.getElementById('resetUserIdInput'),
+      resetEmailInput: document.getElementById('resetEmailInput'),
+      sendResetOtpBtn: document.getElementById('sendResetOtpBtn'),
+      otpSentBadge: document.getElementById('otpSentBadge'),
+      resetOtpCodeInput: document.getElementById('resetOtpCodeInput'),
+      resetNewPasscodeInput: document.getElementById('resetNewPasscodeInput'),
+      resetPasscodeMsg: document.getElementById('resetPasscodeMsg'),
+
+      teamRoomModal: document.getElementById('teamRoomModal'),
+      closeTeamRoomModalBtn: document.getElementById('closeTeamRoomModalBtn'),
+      teamRoomForm: document.getElementById('teamRoomForm'),
+      memberNameInput: document.getElementById('memberNameInput'),
+      teamRoomCodeInput: document.getElementById('teamRoomCodeInput'),
+      copyTeamLinkBtn: document.getElementById('copyTeamLinkBtn'),
+
+      openActivityLogBtn: document.getElementById('openActivityLogBtn'),
+      activityLogModal: document.getElementById('activityLogModal'),
+      closeActivityLogModalBtn: document.getElementById('closeActivityLogModalBtn'),
+      activeSessionsList: document.getElementById('activeSessionsList'),
+      loginAuditLogsList: document.getElementById('loginAuditLogsList'),
+      modificationLogsList: document.getElementById('modificationLogsList'),
+
+      exportJsonBtn: document.getElementById('exportJsonBtn'),
+      exportCsvBtn: document.getElementById('exportCsvBtn'),
+      importBackupBtn: document.getElementById('importBackupBtn'),
+      importFileInput: document.getElementById('importFileInput'),
+
+      photoLightbox: document.getElementById('photoLightbox'),
+      lightboxImg: document.getElementById('lightboxImg'),
+      closeLightboxBtn: document.getElementById('closeLightboxBtn'),
+      toastBanner: document.getElementById('toastBanner'),
+    };
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function deepClone(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    function normalizePart(raw) {
+      return {
+        id: raw.id || 'part-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+        partNumber: String(raw.partNumber || '').trim().toUpperCase(),
+        name: String(raw.name || '').trim(),
+        category: raw.category === 'Existing Parts' ? 'Existing Parts' : 'New Parts',
+        qtyAvailable: Math.max(0, parseInt(raw.qtyAvailable, 10) || 0),
+        qtyUsed: Math.max(0, parseInt(raw.qtyUsed, 10) || 0),
+        alwaysStock: Boolean(raw.alwaysStock),
+        currentLocation: String(raw.currentLocation || 'Warehouse').trim(),
+        lastUsedLocation: String(raw.lastUsedLocation || 'CHN').trim(),
+        lastWoNumber: String(raw.lastWoNumber || '').trim().toUpperCase(),
+        lastAssetNumber: String(raw.lastAssetNumber || '').trim().toUpperCase(),
+        photoDataUrl: raw.photoDataUrl || null,
+        updatedBy: raw.updatedBy || currentMemberName,
+        updatedAt: raw.updatedAt || Date.now(),
+      };
+    }
+
+    function getStorageKey() {
+      return `partsearch_room_${currentTeamRoom}`;
+    }
+
+    function loadLocalState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(getStorageKey()) || 'null');
+        if (saved && Array.isArray(saved.parts)) {
+          committedParts = saved.parts.map(normalizePart);
+          currentLocations = Array.isArray(saved.currentLocations) && saved.currentLocations.length ? saved.currentLocations : [...DEFAULT_CURRENT_LOCATIONS];
+          lastLocations = Array.isArray(saved.lastLocations) && saved.lastLocations.length ? saved.lastLocations : [...DEFAULT_LAST_LOCATIONS];
+          modificationLogs = Array.isArray(saved.modificationLogs) ? saved.modificationLogs : [];
+          loginAuditLogs = Array.isArray(saved.loginAuditLogs) ? saved.loginAuditLogs : [];
+          teamSessions = Array.isArray(saved.teamSessions) ? saved.teamSessions : [];
+        } else {
+          committedParts = SAMPLE_PARTS.map(normalizePart);
+          currentLocations = [...DEFAULT_CURRENT_LOCATIONS];
+          lastLocations = [...DEFAULT_LAST_LOCATIONS];
+          modificationLogs = [];
+          loginAuditLogs = [];
+          teamSessions = [];
+        }
+      } catch (err) {
+        committedParts = SAMPLE_PARTS.map(normalizePart);
+      }
+      pendingParts = deepClone(committedParts);
+      undoStack = [];
+      pendingLogs = [];
+      upsertCurrentSession();
+      saveLocalState();
+    }
+
+    function saveLocalState() {
+      try {
+        localStorage.setItem(
+          getStorageKey(),
+          JSON.stringify({
+            parts: committedParts,
+            currentLocations,
+            lastLocations,
+            modificationLogs,
+            loginAuditLogs,
+            teamSessions,
+            updatedAt: Date.now(),
+          })
+        );
+      } catch (err) {
+        console.warn('Storage save warning:', err);
+      }
+    }
+
+    function recordLoginAudit(eventType, details, actorName = currentMemberName, actorEmail = currentUserEmail, actorUserId = currentUserId) {
+      loginAuditLogs.unshift({
+        id: 'audit-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5),
+        eventType,
+        memberName: actorName || 'Unknown',
+        email: actorEmail || '—',
+        userId: actorUserId || '—',
+        details: details || '',
+        timestamp: Date.now(),
+      });
+      loginAuditLogs = loginAuditLogs.slice(0, 150);
+    }
+
+    function upsertCurrentSession() {
+      const now = Date.now();
+      const idx = teamSessions.findIndex((s) => s.sessionId === currentSessionId);
+      const record = {
+        sessionId: currentSessionId,
+        memberName: currentMemberName,
+        email: currentUserEmail,
+        enteredAt: sessionEnteredAt,
+        lastActiveAt: now,
+      };
+      if (idx !== -1) {
+        teamSessions[idx] = record;
+      } else {
+        teamSessions.unshift(record);
+      }
+      teamSessions = teamSessions.slice(0, 25);
+    }
+
+    function formatDuration(ms) {
+      const totalSec = Math.max(0, Math.floor(ms / 1000));
+      const mins = Math.floor(totalSec / 60);
+      const secs = totalSec % 60;
+      if (mins >= 60) {
+        const hrs = Math.floor(mins / 60);
+        return `${hrs}h ${mins % 60}m`;
+      }
+      return `${mins}m ${secs}s`;
+    }
+
+    function formatTime(ts) {
+      if (!ts) return '—';
+      return new Date(ts).toLocaleString([], {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      if (!dom.toastBanner) return;
+      dom.toastBanner.textContent = msg;
+      dom.toastBanner.classList.remove('hidden');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => dom.toastBanner.classList.add('hidden'), 3000);
+    }
+
+    function bind(el, eventName, handler) {
+      if (el && typeof el.addEventListener === 'function') {
+        el.addEventListener(eventName, handler);
+      }
+    }
+
+    function bindEvents() {
+      // Search & Filter Tabs
+      bind(dom.searchInput, 'input', (e) => {
+        activeSearchQuery = e.target.value;
+        dom.clearSearchBtn?.classList.toggle('hidden', activeSearchQuery.length === 0);
+        renderParts();
+      });
+
+      bind(dom.clearSearchBtn, 'click', () => {
+        activeSearchQuery = '';
+        if (dom.searchInput) dom.searchInput.value = '';
+        dom.clearSearchBtn?.classList.add('hidden');
+        renderParts();
+      });
+
+      dom.filterTabs?.forEach((btn) => {
+        bind(btn, 'click', () => {
+          activeFilter = btn.dataset.filter || 'all';
+          dom.filterTabs.forEach((b) => b.classList.remove('tab-active'));
+          btn.classList.add('tab-active');
+          renderParts();
+        });
+      });
+
+      // Add Part Modal
+      bind(dom.openAddModalBtn, 'click', () => openAddPartModal(null));
+      bind(dom.closeAddModalBtn, 'click', closeAddPartModal);
+      bind(dom.cancelAddModalBtn, 'click', closeAddPartModal);
+      bind(dom.addPartForm, 'submit', handleAddPartSubmit);
+      bind(dom.qtyAvailableInput, 'input', updateNetStockPreview);
+      bind(dom.qtyUsedInput, 'input', updateNetStockPreview);
+
+      // Photo & OCR handlers
+      bind(dom.triggerPhotoBtn, 'click', () => dom.partPhotoInput?.click());
+      bind(dom.partPhotoInput, 'change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) handlePhotoFileSelected(file);
+      });
+      bind(dom.removeDraftPhotoBtn, 'click', () => {
+        draftPartPhoto = null;
+        if (dom.partPhotoInput) dom.partPhotoInput.value = '';
+        dom.draftPhotoPreviewBox?.classList.add('hidden');
+        dom.ocrStatusBox?.classList.add('hidden');
+        if (dom.ocrChipsContainer) dom.ocrChipsContainer.innerHTML = '';
+      });
+      bind(dom.runOcrBtn, 'click', runOcrOnDraftPhoto);
+
+      // Inline Add Custom Current Location
+      bind(dom.toggleAddCurrentLocBtn, 'click', () => {
+        dom.addCurrentLocBox?.classList.toggle('hidden');
+        if (!dom.addCurrentLocBox?.classList.contains('hidden')) {
+          dom.newCurrentLocInput?.focus();
+        }
+      });
+      bind(dom.saveNewCurrentLocBtn, 'click', () => {
+        const val = dom.newCurrentLocInput?.value.trim();
+        if (!val) return;
+        if (!currentLocations.some((l) => l.toLowerCase() === val.toLowerCase())) {
+          currentLocations.push(val);
+          saveLocalState();
+        }
+        populateLocationSelects(val, dom.lastUsedLocationSelect?.value || 'CHN');
+        if (dom.newCurrentLocInput) dom.newCurrentLocInput.value = '';
+        dom.addCurrentLocBox?.classList.add('hidden');
+        showToast(`Added "${val}" to Current Location list`);
+      });
+
+      // Inline Add Custom Last Used Location
+      bind(dom.toggleAddLastLocBtn, 'click', () => {
+        dom.addLastLocBox?.classList.toggle('hidden');
+        if (!dom.addLastLocBox?.classList.contains('hidden')) {
+          dom.newLastLocInput?.focus();
+        }
+      });
+      bind(dom.saveNewLastLocBtn, 'click', () => {
+        const val = dom.newLastLocInput?.value.trim();
+        if (!val) return;
+        if (!lastLocations.some((l) => l.toLowerCase() === val.toLowerCase())) {
+          lastLocations.push(val);
+          saveLocalState();
+        }
+        populateLocationSelects(dom.currentLocationSelect?.value || 'Warehouse', val);
+        if (dom.newLastLocInput) dom.newLastLocInput.value = '';
+        dom.addLastLocBox?.classList.add('hidden');
+        showToast(`Added "${val}" to Last Used Location list`);
+      });
+
+      // Quick Update Usage & Location Modal
+      bind(dom.closeUsageModalBtn, 'click', closeUsageModal);
+      bind(dom.cancelUsageModalBtn, 'click', closeUsageModal);
+      bind(dom.usageUpdateForm, 'submit', handleUsageUpdateSubmit);
+
+      bind(dom.usageToggleAddCurrentLocBtn, 'click', () => {
+        dom.usageAddCurrentLocBox?.classList.toggle('hidden');
+        if (!dom.usageAddCurrentLocBox?.classList.contains('hidden')) {
+          dom.usageNewCurrentLocInput?.focus();
+        }
+      });
+      bind(dom.usageSaveNewCurrentLocBtn, 'click', () => {
+        const val = dom.usageNewCurrentLocInput?.value.trim();
+        if (!val) return;
+        if (!currentLocations.some((l) => l.toLowerCase() === val.toLowerCase())) {
+          currentLocations.push(val);
+          saveLocalState();
+        }
+        populateLocationSelects(val, dom.usageLastLocationSelect?.value || 'CHN');
+        if (dom.usageNewCurrentLocInput) dom.usageNewCurrentLocInput.value = '';
+        dom.usageAddCurrentLocBox?.classList.add('hidden');
+        showToast(`Added "${val}" to Current Location list`);
+      });
+
+      bind(dom.usageToggleAddLastLocBtn, 'click', () => {
+        dom.usageAddLastLocBox?.classList.toggle('hidden');
+        if (!dom.usageAddLastLocBox?.classList.contains('hidden')) {
+          dom.usageNewLastLocInput?.focus();
+        }
+      });
+      bind(dom.usageSaveNewLastLocBtn, 'click', () => {
+        const val = dom.usageNewLastLocInput?.value.trim();
+        if (!val) return;
+        if (!lastLocations.some((l) => l.toLowerCase() === val.toLowerCase())) {
+          lastLocations.push(val);
+          saveLocalState();
+        }
+        populateLocationSelects(dom.usageCurrentLocationSelect?.value || 'Warehouse', val);
+        if (dom.usageNewLastLocInput) dom.usageNewLastLocInput.value = '';
+        dom.usageAddLastLocBox?.classList.add('hidden');
+        showToast(`Added "${val}" to Last Used Location list`);
+      });
+
+      // Undo / Submit Workflow
+      bind(dom.undoPendingBtn, 'click', undoPendingChange);
+      bind(dom.submitPendingBtn, 'click', submitPendingChanges);
+      bind(dom.revertLastSubmitBtn, 'click', revertLastSubmit);
+
+      // Team Room, Access Gate & Activity Log Modals
+      bind(dom.openTeamRoomBtn, 'click', openTeamRoomModal);
+      bind(dom.closeTeamRoomModalBtn, 'click', closeTeamRoomModal);
+      bind(dom.teamRoomForm, 'submit', handleTeamRoomSubmit);
+      bind(dom.copyTeamLinkBtn, 'click', copyTeamShareLink);
+
+      bind(dom.lockTeamGateBtn, 'click', () => {
+        recordLoginAudit('LOCKED', 'Locked team access gate');
+        saveLocalState();
+        localStorage.removeItem('ps_team_unlocked');
+        openTeamAccessGate('signin');
+      });
+      bind(dom.tabSignInMode, 'click', () => setGateMode('signin'));
+      bind(dom.tabCreateAccountMode, 'click', () => setGateMode('register'));
+      bind(dom.openForgotPasscodeBtn, 'click', () => {
+        activeResetOtp = null;
+        dom.otpSentBadge?.classList.add('hidden');
+        dom.teamAccessForm?.classList.add('hidden');
+        dom.forgotPasscodeForm?.classList.remove('hidden');
+        if (dom.resetAccessCodeInput) dom.resetAccessCodeInput.value = '';
+        if (dom.resetUserIdInput) dom.resetUserIdInput.value = dom.gateUserIdInput?.value || currentUserId || '';
+        const users = getTeamUsersStore();
+        const savedEmail = (dom.gateEmailInput?.value || '').trim().toLowerCase() || users[(dom.resetUserIdInput?.value || '').trim().toLowerCase()]?.email || currentUserEmail || '';
+        if (dom.resetEmailInput) dom.resetEmailInput.value = savedEmail;
+        if (dom.resetOtpCodeInput) dom.resetOtpCodeInput.value = '';
+        if (dom.resetNewPasscodeInput) dom.resetNewPasscodeInput.value = '';
+        dom.resetPasscodeMsg?.classList.add('hidden');
+      });
+      bind(dom.backToSignInBtn, 'click', () => {
+        activeResetOtp = null;
+        dom.forgotPasscodeForm?.classList.add('hidden');
+        dom.teamAccessForm?.classList.remove('hidden');
+        dom.resetPasscodeMsg?.classList.add('hidden');
+      });
+      bind(dom.sendResetOtpBtn, 'click', handleSendResetOtp);
+      bind(dom.forgotPasscodeForm, 'submit', handleForgotPasscodeReset);
+      bind(dom.teamAccessForm, 'submit', handleTeamAccessSubmit);
+      bind(dom.openActivityLogBtn, 'click', openActivityLogModal);
+      bind(dom.closeActivityLogModalBtn, 'click', closeActivityLogModal);
+
+      // Backup Export / Import
+      bind(dom.exportJsonBtn, 'click', exportJsonBackup);
+      bind(dom.exportCsvBtn, 'click', exportCsvBackup);
+      bind(dom.importBackupBtn, 'click', () => dom.importFileInput?.click());
+      bind(dom.importFileInput, 'change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) importBackupFile(file);
+        e.target.value = '';
+      });
+
+      // Photo Lightbox
+      bind(dom.closeLightboxBtn, 'click', () => dom.photoLightbox?.classList.add('hidden'));
+      bind(dom.photoLightbox, 'click', (e) => {
+        if (e.target === dom.photoLightbox) dom.photoLightbox.classList.add('hidden');
+      });
+    }
+
+    function populateLocationSelects(selectedCurrent = 'Warehouse', selectedLast = 'CHN') {
+      const renderOptions = (list, selectedVal) =>
+        list
+          .map((loc) => {
+            const isSelected = loc.toLowerCase() === String(selectedVal || '').toLowerCase();
+            return `<option value="${escapeHtml(loc)}" ${isSelected ? 'selected' : ''}>${escapeHtml(loc)}</option>`;
+          })
+          .join('');
+
+      if (dom.currentLocationSelect) dom.currentLocationSelect.innerHTML = renderOptions(currentLocations, selectedCurrent);
+      if (dom.lastUsedLocationSelect) dom.lastUsedLocationSelect.innerHTML = renderOptions(lastLocations, selectedLast);
+      if (dom.usageCurrentLocationSelect) dom.usageCurrentLocationSelect.innerHTML = renderOptions(currentLocations, selectedCurrent);
+      if (dom.usageLastLocationSelect) dom.usageLastLocationSelect.innerHTML = renderOptions(lastLocations, selectedLast);
+    }
+
+    function updateNetStockPreview() {
+      const isEditing = Boolean(dom.editingPartIdInput?.value);
+      const rawAvail = Math.max(0, parseInt(dom.qtyAvailableInput?.value, 10) || 0);
+      const rawUsed = Math.max(0, parseInt(dom.qtyUsedInput?.value, 10) || 0);
+      const left = isEditing ? rawAvail : Math.max(0, rawAvail - rawUsed);
+      if (dom.netStockPreviewText) {
+        dom.netStockPreviewText.textContent = `${left} ${left === 1 ? 'part' : 'parts'} left`;
+        dom.netStockPreviewText.className = left === 0 ? 'font-extrabold text-rose-400' : 'font-extrabold text-emerald-300';
+      }
+    }
+
+    function openAddPartModal(existingPart = null) {
+      dom.addPartForm.reset();
+      dom.addCurrentLocBox.classList.add('hidden');
+      dom.addLastLocBox.classList.add('hidden');
+      dom.ocrStatusBox.classList.add('hidden');
+      dom.ocrChipsContainer.innerHTML = '';
+
+      if (existingPart) {
+        dom.addPartModalTitle.textContent = `Edit ${existingPart.partNumber}`;
+        dom.qtyAvailableLabel.textContent = 'Number of Parts Left (Available)';
+        dom.editingPartIdInput.value = existingPart.id;
+        dom.partNumberInput.value = existingPart.partNumber;
+        dom.partCategorySelect.value = existingPart.category;
+        dom.partNameInput.value = existingPart.name;
+        dom.qtyAvailableInput.value = String(existingPart.qtyAvailable);
+        dom.qtyUsedInput.value = String(existingPart.qtyUsed || 0);
+        dom.alwaysStockCheckbox.checked = Boolean(existingPart.alwaysStock);
+        populateLocationSelects(existingPart.currentLocation, existingPart.lastUsedLocation);
+        dom.lastWoInput.value = existingPart.lastWoNumber || '';
+        dom.lastAssetInput.value = existingPart.lastAssetNumber || '';
+        draftPartPhoto = existingPart.photoDataUrl || null;
+      } else {
+        dom.addPartModalTitle.textContent = 'Add Part to Search Catalog';
+        dom.qtyAvailableLabel.textContent = 'Total Quantity Received / Available';
+        dom.editingPartIdInput.value = '';
+        dom.partCategorySelect.value = 'New Parts';
+        dom.qtyAvailableInput.value = '1';
+        dom.qtyUsedInput.value = '0';
+        dom.alwaysStockCheckbox.checked = false;
+        populateLocationSelects(currentLocations[0] || 'Warehouse', lastLocations[0] || 'CHN');
+        draftPartPhoto = null;
+      }
+      updateNetStockPreview();
+
+      if (draftPartPhoto) {
+        dom.draftPhotoImg.src = draftPartPhoto;
+        dom.draftPhotoPreviewBox.classList.remove('hidden');
+      } else {
+        dom.draftPhotoPreviewBox.classList.add('hidden');
+      }
+      dom.addPartModal.classList.remove('hidden');
+    }
+
+    function closeAddPartModal() {
+      dom.addPartModal.classList.add('hidden');
+    }
+
+    function handlePhotoFileSelected(file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        draftPartPhoto = ev.target.result;
+        dom.draftPhotoImg.src = draftPartPhoto;
+        dom.draftPhotoPreviewBox.classList.remove('hidden');
+        runOcrOnDraftPhoto();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function runOcrOnDraftPhoto() {
+      if (!draftPartPhoto) {
+        showToast('Upload or snap a photo first to scan text.');
+        return;
+      }
+      if (typeof Tesseract === 'undefined') {
+        showToast('OCR library still loading — enter Part Number manually.');
+        return;
+      }
+      dom.ocrStatusBox.classList.remove('hidden');
+      dom.ocrStatusText.textContent = 'Scanning label for part numbers...';
+      dom.ocrChipsContainer.innerHTML = '';
+
+      try {
+        const result = await Tesseract.recognize(draftPartPhoto, 'eng');
+        const text = (result && result.data && result.data.text) || '';
+        const tokens = Array.from(
+          new Set(
+            text
+              .split(/\s+/)
+              .map((t) => t.replace(/[^A-Za-z0-9\-_/]/g, '').toUpperCase())
+              .filter((t) => t.length >= 3 && /\d/.test(t))
+          )
+        ).slice(0, 8);
+
+        if (tokens.length === 0) {
+          dom.ocrStatusText.textContent = 'No alphanumeric part codes detected — type manually.';
+          return;
+        }
+        dom.ocrStatusText.textContent = 'Tap a scanned code to fill Part Number:';
+        tokens.forEach((code) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'px-2.5 py-1 rounded-lg bg-indigo-600/25 hover:bg-indigo-600/40 border border-indigo-500/40 text-xs font-bold text-indigo-200';
+          btn.textContent = code;
+          btn.onclick = () => {
+            dom.partNumberInput.value = code;
+            showToast(`Filled Part Number: ${code}`);
+          };
+          dom.ocrChipsContainer.appendChild(btn);
+        });
+      } catch (err) {
+        dom.ocrStatusText.textContent = 'OCR scan unavailable — enter Part Number manually.';
+      }
+    }
+
+    function stageMutation(mutatorFn, logText, partNumber) {
+      undoStack.push({
+        parts: deepClone(pendingParts),
+        logs: deepClone(pendingLogs),
+      });
+      mutatorFn(pendingParts);
+      pendingLogs.unshift({
+        id: 'log-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5),
+        memberName: currentMemberName,
+        partNumber: partNumber || 'CATALOG',
+        action: logText,
+        timestamp: Date.now(),
+      });
+      renderParts();
+      updatePendingBar();
+    }
+
+    function handleAddPartSubmit(e) {
+      e.preventDefault();
+      const partNumber = dom.partNumberInput.value.trim().toUpperCase();
+      if (!partNumber) {
+        showToast('Please enter a Part Number.');
+        return;
+      }
+
+      const isEditing = Boolean(dom.editingPartIdInput.value);
+      const rawQtyAvailable = Math.max(0, parseInt(dom.qtyAvailableInput.value, 10) || 0);
+      const rawQtyUsed = Math.max(0, parseInt(dom.qtyUsedInput.value, 10) || 0);
+      const calculatedLeft = isEditing ? rawQtyAvailable : Math.max(0, rawQtyAvailable - rawQtyUsed);
+
+      const payload = normalizePart({
+        id: dom.editingPartIdInput.value || undefined,
+        partNumber,
+        name: dom.partNameInput.value.trim(),
+        category: dom.partCategorySelect.value,
+        qtyAvailable: calculatedLeft,
+        qtyUsed: rawQtyUsed,
+        alwaysStock: dom.alwaysStockCheckbox.checked,
+        currentLocation: dom.currentLocationSelect.value || 'Warehouse',
+        lastUsedLocation: dom.lastUsedLocationSelect.value || 'CHN',
+        lastWoNumber: dom.lastWoInput.value.trim().toUpperCase(),
+        lastAssetNumber: dom.lastAssetInput.value.trim().toUpperCase(),
+        photoDataUrl: draftPartPhoto,
+        updatedBy: currentMemberName,
+        updatedAt: Date.now(),
+      });
+
+      const existingIdx = pendingParts.findIndex((p) => p.id === payload.id);
+      const logText =
+        existingIdx !== -1
+          ? `Edited part (Left: ${payload.qtyAvailable}, Used: ${payload.qtyUsed}, Loc: ${payload.currentLocation})`
+          : `Added part (Received: ${rawQtyAvailable}, Used: ${payload.qtyUsed} → ${payload.qtyAvailable} left, Loc: ${payload.currentLocation})`;
+
+      stageMutation(
+        (arr) => {
+          if (existingIdx !== -1) {
+            arr[existingIdx] = payload;
+          } else {
+            arr.unshift(payload);
+          }
+        },
+        logText,
+        payload.partNumber
+      );
+
+      closeAddPartModal();
+      showToast(`Saved ${payload.partNumber}: ${payload.qtyAvailable} left (pending Submit)`);
+    }
+
+    function adjustPartStock(partId, delta) {
+      const target = pendingParts.find((p) => p.id === partId);
+      if (!target) return;
+      if (delta < 0 && target.qtyAvailable <= 0) {
+        showToast(`${target.partNumber} is already at 0 available.`);
+        return;
+      }
+      stageMutation(
+        (arr) => {
+          const item = arr.find((p) => p.id === partId);
+          if (!item) return;
+          if (delta < 0) {
+            item.qtyAvailable = Math.max(0, item.qtyAvailable - 1);
+            item.qtyUsed = (item.qtyUsed || 0) + 1;
+          } else {
+            item.qtyAvailable += 1;
+          }
+          item.updatedBy = currentMemberName;
+          item.updatedAt = Date.now();
+        },
+        delta < 0 ? 'Used 1 unit (-1 left, +1 used)' : 'Restocked +1 unit',
+        target.partNumber
+      );
+      showToast(delta < 0 ? `-1 used on ${target.partNumber}` : `+1 restocked on ${target.partNumber}`);
+    }
+
+    function markPartZero(partId) {
+      const target = pendingParts.find((p) => p.id === partId);
+      if (!target) return;
+      const prevAvail = target.qtyAvailable;
+      stageMutation(
+        (arr) => {
+          const item = arr.find((p) => p.id === partId);
+          if (!item) return;
+          item.qtyUsed = (item.qtyUsed || 0) + item.qtyAvailable;
+          item.qtyAvailable = 0;
+          item.updatedBy = currentMemberName;
+          item.updatedAt = Date.now();
+        },
+        `Marked 0 available (moved ${prevAvail} to Parts Used)`,
+        target.partNumber
+      );
+      showToast(`${target.partNumber} marked 0 available`);
+    }
+
+    function deletePartEntry(partId) {
+      const target = pendingParts.find((p) => p.id === partId);
+      if (!target) return;
+      stageMutation(
+        (arr) => {
+          const idx = arr.findIndex((p) => p.id === partId);
+          if (idx !== -1) arr.splice(idx, 1);
+        },
+        'Deleted part from catalog',
+        target.partNumber
+      );
+      showToast(`Removed ${target.partNumber} (click Undo to restore)`);
+    }
+
+    function openUsageModal(partId) {
+      const part = pendingParts.find((p) => p.id === partId);
+      if (!part) return;
+      dom.usagePartIdInput.value = part.id;
+      dom.usageModalTitle.textContent = `Update ${part.partNumber} Location & WO`;
+      dom.usageAddCurrentLocBox.classList.add('hidden');
+      dom.usageAddLastLocBox.classList.add('hidden');
+      populateLocationSelects(part.currentLocation, part.lastUsedLocation);
+      dom.usageLastWoInput.value = part.lastWoNumber || '';
+      dom.usageLastAssetInput.value = part.lastAssetNumber || '';
+      dom.usageDeductOneCheckbox.checked = false;
+      dom.usageUpdateModal.classList.remove('hidden');
+    }
+
+    function closeUsageModal() {
+      dom.usageUpdateModal.classList.add('hidden');
+    }
+
+    function handleUsageUpdateSubmit(e) {
+      e.preventDefault();
+      const partId = dom.usagePartIdInput.value;
+      const target = pendingParts.find((p) => p.id === partId);
+      if (!target) return;
+
+      const newCurrentLoc = dom.usageCurrentLocationSelect.value || target.currentLocation;
+      const newLastLoc = dom.usageLastLocationSelect.value || target.lastUsedLocation;
+      const newWo = dom.usageLastWoInput.value.trim().toUpperCase();
+      const newAsset = dom.usageLastAssetInput.value.trim().toUpperCase();
+      const deductOne = dom.usageDeductOneCheckbox.checked;
+
+      stageMutation(
+        (arr) => {
+          const item = arr.find((p) => p.id === partId);
+          if (!item) return;
+          item.currentLocation = newCurrentLoc;
+          item.lastUsedLocation = newLastLoc;
+          item.lastWoNumber = newWo;
+          item.lastAssetNumber = newAsset;
+          if (deductOne && item.qtyAvailable > 0) {
+            item.qtyAvailable -= 1;
+            item.qtyUsed = (item.qtyUsed || 0) + 1;
+          }
+          item.updatedBy = currentMemberName;
+          item.updatedAt = Date.now();
+        },
+        `Updated Loc→${newCurrentLoc}, LastUsed→${newLastLoc}, WO→${newWo || '—'}, Asset→${newAsset || '—'}${deductOne ? ' (-1 unit)' : ''}`,
+        target.partNumber
+      );
+
+      closeUsageModal();
+      showToast(`Updated ${target.partNumber} (pending Submit)`);
+    }
+
+    function undoPendingChange() {
+      if (undoStack.length === 0) return;
+      const prev = undoStack.pop();
+      pendingParts = prev.parts;
+      pendingLogs = prev.logs;
+      renderParts();
+      updatePendingBar();
+      showToast('Reverted last unstaged action');
+    }
+
+    function submitPendingChanges() {
+      if (undoStack.length === 0) return;
+      lastSubmittedSnapshot = {
+        parts: deepClone(committedParts),
+        logs: deepClone(modificationLogs),
+      };
+      committedParts = deepClone(pendingParts);
+      modificationLogs = [...pendingLogs, ...modificationLogs].slice(0, 100);
+      undoStack = [];
+      pendingLogs = [];
+      upsertCurrentSession();
+      saveLocalState();
+      renderParts();
+      updatePendingBar();
+      showToast('All changes submitted & saved!');
+    }
+
+    function revertLastSubmit() {
+      if (!lastSubmittedSnapshot) return;
+      committedParts = deepClone(lastSubmittedSnapshot.parts);
+      pendingParts = deepClone(lastSubmittedSnapshot.parts);
+      modificationLogs = deepClone(lastSubmittedSnapshot.logs);
+      lastSubmittedSnapshot = null;
+      undoStack = [];
+      pendingLogs = [];
+      saveLocalState();
+      renderParts();
+      updatePendingBar();
+      showToast('Reverted last submitted batch');
+    }
+
+    function updatePendingBar() {
+      const count = undoStack.length;
+      if (dom.undoPendingBtn) dom.undoPendingBtn.disabled = count === 0;
+      if (dom.submitPendingBtn) dom.submitPendingBtn.disabled = count === 0;
+      dom.revertLastSubmitBtn?.classList.toggle('hidden', !lastSubmittedSnapshot || count > 0);
+
+      if (count > 0) {
+        if (dom.pendingDot) dom.pendingDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping';
+        if (dom.pendingSummaryText) {
+          dom.pendingSummaryText.textContent = `${count} unsubmitted ${count === 1 ? 'change' : 'changes'} — click Submit Changes`;
+          dom.pendingSummaryText.className = 'text-xs font-bold text-amber-300';
+        }
+      } else {
+        if (dom.pendingDot) dom.pendingDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
+        if (dom.pendingSummaryText) {
+          dom.pendingSummaryText.textContent = 'All changes submitted & saved';
+          dom.pendingSummaryText.className = 'text-xs font-semibold text-slate-300';
+        }
+      }
+      if (dom.activityBadgeCount) dom.activityBadgeCount.textContent = String(modificationLogs.length);
+    }
+
+    function renderParts() {
+      const q = activeSearchQuery.trim().toLowerCase();
+      const filtered = pendingParts.filter((p) => {
+        if (activeFilter === 'New Parts' && p.category !== 'New Parts') return false;
+        if (activeFilter === 'Existing Parts' && p.category !== 'Existing Parts') return false;
+        if (activeFilter === 'always' && !p.alwaysStock) return false;
+        if (activeFilter === 'used' && (p.qtyUsed || 0) <= 0) return false;
+        if (activeFilter === 'zero' && p.qtyAvailable > 0) return false;
+
+        if (!q) return true;
+        const haystack = [
+          p.partNumber,
+          p.name,
+          p.category,
+          p.currentLocation,
+          p.lastUsedLocation,
+          p.lastWoNumber,
+          p.lastAssetNumber,
+        ]
+          .join(' ')
+          .toLowerCase();
+        return haystack.includes(q);
+      });
+
+      dom.statTotalSkus.textContent = String(pendingParts.length);
+      dom.statAvailableUnits.textContent = String(pendingParts.reduce((s, p) => s + p.qtyAvailable, 0));
+      dom.statUsedUnits.textContent = String(pendingParts.reduce((s, p) => s + (p.qtyUsed || 0), 0));
+      dom.statAlwaysStock.textContent = String(pendingParts.filter((p) => p.alwaysStock).length);
+      dom.statZeroStock.textContent = String(pendingParts.filter((p) => p.qtyAvailable === 0).length);
+
+      if (filtered.length === 0) {
+        if (dom.partsGrid) dom.partsGrid.innerHTML = '';
+        dom.emptyStateBox?.classList.remove('hidden');
+        return;
+      }
+      dom.emptyStateBox?.classList.add('hidden');
+
+      if (dom.partsGrid) {
+        dom.partsGrid.innerHTML = filtered
+          .map((part) => {
+            const isZero = part.qtyAvailable === 0;
+            const isLow = part.qtyAvailable > 0 && part.qtyAvailable <= 2;
+            const stockBadge = isZero
+              ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/40">0 AVAILABLE · OUT</span>`
+              : isLow
+              ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/40">${part.qtyAvailable} AVAILABLE · LOW</span>`
+              : `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">${part.qtyAvailable} AVAILABLE</span>`;
+
+            const photoHtml = part.photoDataUrl
+              ? `<img src="${part.photoDataUrl}" alt="${escapeHtml(part.partNumber)}" data-action="view-photo" data-id="${part.id}" class="w-14 h-14 rounded-xl object-cover border border-slate-700 cursor-pointer shrink-0" />`
+              : '';
+
+            return `
+              <article class="bg-slate-900/90 border ${isZero ? 'border-rose-500/35' : 'border-slate-800'} rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-lg">
+                <div class="space-y-2.5">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="flex items-start gap-3 min-w-0">
+                      ${photoHtml}
+                      <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-1.5">
+                          <h3 class="text-base font-extrabold text-white tracking-tight">${escapeHtml(part.partNumber)}</h3>
+                          <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">${escapeHtml(part.category)}</span>
+                        </div>
+                        <p class="text-xs text-slate-400 truncate mt-0.5">${escapeHtml(part.name || 'Biomedical Component')}</p>
+                      </div>
+                    </div>
+                    <div class="flex flex-col items-end gap-1 shrink-0">
+                      ${stockBadge}
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/15 text-sky-300 border border-sky-500/30">${part.qtyUsed || 0} PARTS USED</span>
+                    </div>
+                  </div>
+
+                  ${
+                    part.alwaysStock
+                      ? `<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[11px] font-semibold text-amber-300">Always Stock (No WO Needed)</div>`
+                      : ''
+                  }
+
+                  <div class="grid grid-cols-2 gap-2 bg-slate-950/80 border border-slate-800/90 rounded-xl p-2.5 text-xs">
+                    <div>
+                      <p class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Current Location</p>
+                      <p class="font-bold text-indigo-300 mt-0.5">${escapeHtml(part.currentLocation || 'Warehouse')}</p>
+                    </div>
+                    <div>
+                      <p class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Last Used Location</p>
+                      <p class="font-bold text-slate-200 mt-0.5">${escapeHtml(part.lastUsedLocation || '—')}</p>
+                    </div>
+                    <div>
+                      <p class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Last Work Order #</p>
+                      <p class="font-semibold text-slate-300 mt-0.5">${escapeHtml(part.lastWoNumber || '—')}</p>
+                    </div>
+                    <div>
+                      <p class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Last Asset #</p>
+                      <p class="font-semibold text-slate-300 mt-0.5">${escapeHtml(part.lastAssetNumber || '—')}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-1.5 pt-2 border-t border-slate-800/80">
+                  <div class="flex items-center gap-1.5">
+                    <button type="button" data-action="minus-one" data-id="${part.id}" class="px-2.5 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-xs font-extrabold text-rose-300 transition">-1 Use</button>
+                    <button type="button" data-action="plus-one" data-id="${part.id}" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-xs font-extrabold text-emerald-300 transition">+1 Restock</button>
+                    <button type="button" data-action="mark-zero" data-id="${part.id}" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 transition">Mark 0</button>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <button type="button" data-action="update-usage" data-id="${part.id}" class="px-2.5 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-xs font-semibold text-indigo-300 transition">Used / Loc</button>
+                    <button type="button" data-action="edit-part" data-id="${part.id}" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition">Edit</button>
+                    <button type="button" data-action="delete-part" data-id="${part.id}" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-900/50 text-xs font-semibold text-rose-400 transition">Del</button>
+                  </div>
+                </div>
+              </article>
+            `;
+          })
+          .join('');
+      }
+    }
+
+    // Team Room & Activity Log Modals
+    function openTeamRoomModal() {
+      dom.memberNameInput.value = currentMemberName;
+      dom.teamRoomCodeInput.value = currentTeamRoom;
+      dom.teamRoomModal.classList.remove('hidden');
+    }
+
+    function closeTeamRoomModal() {
+      dom.teamRoomModal.classList.add('hidden');
+    }
+
+    function handleTeamRoomSubmit(e) {
+      e.preventDefault();
+      const name = dom.memberNameInput.value.trim();
+      const room = dom.teamRoomCodeInput.value.trim().toUpperCase();
+      if (!name || !room) return;
+      currentMemberName = name;
+      currentTeamRoom = room;
+      localStorage.setItem('ps_member_name', currentMemberName);
+      localStorage.setItem('ps_team_room', currentTeamRoom);
+      updateHeaderIdentity();
+      loadLocalState();
+      renderParts();
+      updatePendingBar();
+      closeTeamRoomModal();
+      showToast(`Joined room ${currentTeamRoom} as ${currentMemberName}`);
+    }
+
+    function copyTeamShareLink() {
+      const url = new URL(window.location.href);
+      url.searchParams.set('room', currentTeamRoom);
+      const tempInput = document.createElement('input');
+      tempInput.value = url.toString();
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+      showToast(`Copied link for room ${currentTeamRoom}`);
+    }
+
+    function openActivityLogModal() {
+      upsertCurrentSession();
+      saveLocalState();
+      const now = Date.now();
+      dom.activeSessionsList.innerHTML = teamSessions.length
+        ? teamSessions
+            .map((s) => {
+              const stay = formatDuration((s.sessionId === currentSessionId ? now : s.lastActiveAt) - s.enteredAt);
+              return `
+                <div class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 flex items-center justify-between text-xs">
+                  <div>
+                    <p class="font-bold text-white">${escapeHtml(s.memberName)} ${s.email ? `<span class="text-slate-400 font-normal">(${escapeHtml(s.email)})</span>` : ''} ${s.sessionId === currentSessionId ? '<span class="text-emerald-400">(You · Active)</span>' : ''}</p>
+                    <p class="text-[11px] text-slate-400">Entered: ${formatTime(s.enteredAt)}</p>
+                  </div>
+                  <span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 font-bold">Stay: ${stay}</span>
+                </div>
+              `;
+            })
+            .join('')
+        : '<p class="text-xs text-slate-500">No recorded sessions yet.</p>';
+
+      if (dom.loginAuditLogsList) {
+        dom.loginAuditLogsList.innerHTML = loginAuditLogs.length
+          ? loginAuditLogs
+              .map(
+                (item) => `
+                <div class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs space-y-0.5">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="font-bold text-rose-300">${escapeHtml(item.eventType)} · <span class="text-white">${escapeHtml(item.memberName)}</span> <span class="text-slate-400 font-normal">(${escapeHtml(item.email)})</span></span>
+                    <span class="text-[11px] text-slate-500 shrink-0">${formatTime(item.timestamp)}</span>
+                  </div>
+                  <p class="text-slate-300">${escapeHtml(item.details)} <span class="text-slate-500">[@${escapeHtml(item.userId)}]</span></p>
+                </div>
+              `
+              )
+              .join('')
+          : '<p class="text-xs text-slate-500">No login or security events recorded yet.</p>';
+      }
+
+      dom.modificationLogsList.innerHTML = modificationLogs.length
+        ? modificationLogs
+            .map(
+              (log) => `
+              <div class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs space-y-0.5">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-indigo-300">${escapeHtml(log.partNumber)} · <span class="text-white">${escapeHtml(log.memberName)}</span></span>
+                  <span class="text-[11px] text-slate-500">${formatTime(log.timestamp)}</span>
+                </div>
+                <p class="text-slate-300">${escapeHtml(log.action)}</p>
+              </div>
+            `
+            )
+            .join('')
+        : '<p class="text-xs text-slate-500">No submitted modifications yet.</p>';
+
+      dom.activityLogModal.classList.remove('hidden');
+    }
+
+    function closeActivityLogModal() {
+      dom.activityLogModal.classList.add('hidden');
+    }
+
+    function updateHeaderIdentity() {
+      if (dom.activeMemberLabel) {
+        const idTag = currentUserId ? ` · @${currentUserId}` : '';
+        dom.activeMemberLabel.textContent = `${currentMemberName}${idTag} (${currentTeamRoom})`;
+      }
+      if (dom.gateRoomPreview) {
+        dom.gateRoomPreview.textContent = currentTeamRoom;
+      }
+    }
+
+    function getTeamUsersStore() {
+      try {
+        return JSON.parse(localStorage.getItem(`ps_team_users_${currentTeamRoom}`) || '{}');
+      } catch (err) {
+        return {};
+      }
+    }
+
+    function saveTeamUsersStore(usersObj) {
+      localStorage.setItem(`ps_team_users_${currentTeamRoom}`, JSON.stringify(usersObj));
+    }
+
+    function setGateMode(mode) {
+      gateMode = mode === 'register' ? 'register' : 'signin';
+      const isRegister = gateMode === 'register';
+      dom.tabSignInMode?.classList.toggle('bg-indigo-600', !isRegister);
+      dom.tabSignInMode?.classList.toggle('text-white', !isRegister);
+      dom.tabSignInMode?.classList.toggle('text-slate-400', isRegister);
+
+      dom.tabCreateAccountMode?.classList.toggle('bg-indigo-600', isRegister);
+      dom.tabCreateAccountMode?.classList.toggle('text-white', isRegister);
+      dom.tabCreateAccountMode?.classList.toggle('text-slate-400', !isRegister);
+
+      if (dom.gateEmailInput) {
+        dom.gateEmailInput.required = true;
+      }
+
+      dom.confirmPasscodeBox?.classList.toggle('hidden', !isRegister);
+      if (dom.gateConfirmPasscodeInput) {
+        dom.gateConfirmPasscodeInput.required = isRegister;
+      }
+      if (dom.gateSubmitBtn) {
+        dom.gateSubmitBtn.textContent = isRegister ? 'Sign Up & Unlock' : 'Log In & Unlock';
+      }
+      dom.accessCodeError?.classList.add('hidden');
+    }
+
+    function showGateError(msg) {
+      if (!dom.accessCodeError) return;
+      dom.accessCodeError.textContent = msg;
+      dom.accessCodeError.classList.remove('hidden');
+    }
+
+    function handleTeamAccessSubmit(e) {
+      e.preventDefault();
+      const memberName = (dom.gateMemberNameInput?.value || '').trim();
+      const email = (dom.gateEmailInput?.value || '').trim().toLowerCase();
+      const accessCode = (dom.accessCodeInput?.value || '').trim().toUpperCase();
+      const userId = (dom.gateUserIdInput?.value || '').trim().toLowerCase();
+      const passcode = dom.gatePasscodeInput?.value || '';
+      const confirmPasscode = dom.gateConfirmPasscodeInput?.value || '';
+
+      if (accessCode !== TEAM_ACCESS_CODE) {
+        recordLoginAudit('FAILED_LOGIN', 'Invalid Team Access Code attempt', memberName, email, userId);
+        saveLocalState();
+        showGateError('Invalid Team Access Code. Check with your team lead.');
+        return;
+      }
+      if (!memberName || !userId || !email || !email.includes('@')) {
+        showGateError('Please enter your Name, valid Email Address, and User ID.');
+        return;
+      }
+      if (passcode.length < 4) {
+        showGateError('Passcode must be at least 4 characters.');
+        return;
+      }
+
+      const users = getTeamUsersStore();
+      let auditEvent = 'LOGIN';
+      let auditDetail = `Logged in with email ${email}`;
+
+      if (gateMode === 'register') {
+        if (passcode !== confirmPasscode) {
+          showGateError('Passcodes do not match.');
+          return;
+        }
+        users[userId] = {
+          userId,
+          memberName,
+          email,
+          passcode,
+          updatedAt: Date.now(),
+        };
+        saveTeamUsersStore(users);
+        auditEvent = 'SIGN_UP';
+        auditDetail = `Created account & signed up with email ${email}`;
+      } else {
+        const existingUser = users[userId];
+        if (!existingUser) {
+          users[userId] = {
+            userId,
+            memberName,
+            email,
+            passcode,
+            updatedAt: Date.now(),
+          };
+          saveTeamUsersStore(users);
+          auditEvent = 'SIGN_UP_LOGIN';
+          auditDetail = `Registered & logged in with email ${email}`;
+        } else {
+          if (existingUser.email && existingUser.email.toLowerCase() !== email) {
+            recordLoginAudit('FAILED_LOGIN', `Email mismatch (entered ${email}, expected ${existingUser.email})`, memberName, email, userId);
+            saveLocalState();
+            showGateError('Use the same email address registered for this User ID.');
+            return;
+          }
+          if (existingUser.passcode !== passcode) {
+            recordLoginAudit('FAILED_LOGIN', 'Incorrect passcode attempt', memberName, email, userId);
+            saveLocalState();
+            showGateError('Incorrect passcode for this User ID. Use "Forgot Passcode? (Email OTP)" to reset it.');
+            return;
+          }
+          existingUser.memberName = memberName;
+          existingUser.email = email;
+          existingUser.updatedAt = Date.now();
+          saveTeamUsersStore(users);
+        }
+      }
+
+      currentMemberName = memberName;
+      currentUserId = userId;
+      currentUserEmail = email;
+      localStorage.setItem('ps_member_name', currentMemberName);
+      localStorage.setItem('ps_user_id', currentUserId);
+      localStorage.setItem('ps_user_email', currentUserEmail);
+      localStorage.setItem('ps_team_unlocked', 'true');
+
+      recordLoginAudit(auditEvent, auditDetail, currentMemberName, currentUserEmail, currentUserId);
+      upsertCurrentSession();
+      saveLocalState();
+      updateHeaderIdentity();
+      dom.accessCodeError?.classList.add('hidden');
+      dom.teamAccessModal?.classList.add('hidden');
+      showToast(`Welcome, ${currentMemberName} (${currentUserEmail})`);
+    }
+
+    function handleSendResetOtp() {
+      const code = (dom.resetAccessCodeInput?.value || '').trim().toUpperCase();
+      const userId = (dom.resetUserIdInput?.value || '').trim().toLowerCase();
+      const email = (dom.resetEmailInput?.value || '').trim().toLowerCase();
+
+      if (!dom.resetPasscodeMsg) return;
+      dom.resetPasscodeMsg.classList.remove('hidden');
+
+      if (code !== TEAM_ACCESS_CODE) {
+        dom.resetPasscodeMsg.className = 'text-xs font-semibold text-rose-400';
+        dom.resetPasscodeMsg.textContent = 'Enter a valid Team Access Code first.';
+        return;
+      }
+      if (!userId || !email || !email.includes('@')) {
+        dom.resetPasscodeMsg.className = 'text-xs font-semibold text-rose-400';
+        dom.resetPasscodeMsg.textContent = 'Enter your User ID and the Email used when signing up.';
+        return;
+      }
+
+      const users = getTeamUsersStore();
+      const account = users[userId];
+      if (!account) {
+        dom.resetPasscodeMsg.className = 'text-xs font-semibold text-rose-400';
+        dom.resetPasscodeMsg.textContent = `No account found for @${userId} in ${currentTeamRoom}.`;
+        return;
+      }
+      if (account.email && account.email.toLowerCase() !== email) {
+        dom.resetPasscodeMsg.className = 'text-xs font-semibold text-rose-400';
+        dom.resetPasscodeMsg.textContent = 'Email does not match the email used when this account signed up.';
+        return;
+      }
+
+      const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+      activeResetOtp = {
+        userId,
+        email,
+        code: otpCode,
+        expiresAt: Date.now() + 10 * 60 * 1000,
+      };
+
+      if (dom.otpSentBadge) {
+        dom.otpSentBadge.textContent = `OTP Sent (${otpCode})`;
+        dom.otpSentBadge.classList.remove('hidden');
+      }
+      dom.resetPasscodeMsg.className = 'text-xs font-semibold text-emerald-300';
+      dom.resetPasscodeMsg.textContent = `6-digit OTP dispatched to ${email} (Code: ${otpCode}). Enter it below with your new passcode.`;
+      dom.resetOtpCodeInput?.focus();
+    }
+
+    function handleForgotPasscodeReset(e) {
+      e.preventDefault();
+      const code = (dom.resetAccessCodeInput?.value || '').trim().toUpperCase();
+      const userId = (dom.resetUserIdInput?.value || '').trim().toLowerCase();
+      const email = (dom.resetEmailInput?.value || '').trim().toLowerCase();
+      const enteredOtp = (dom.resetOtpCodeInput?.value || '').trim();
+      const newPasscode = dom.resetNewPasscodeInput?.value || '';
+
+      if (!dom.resetPasscodeMsg) return;
+      dom.resetPasscodeMsg.classList.remove('hidden');
+
+      if (code !== TEAM_ACCESS_CODE) {
+        dom.resetPasscodeMsg.className = 'text-xs font-semibold text-rose-400';
+        dom.resetPasscodeMsg.textContent = 'Invalid Team Access Code.';
+        return;
+      }
+      if (!activeResetOtp || activeResetOtp.userId !== userId || activeResetOtp.email !== email) {
+        dom.resetPasscodeMsg.className = 'text-xs font-semibold text-rose-400';
+        dom.resetPasscodeMsg.textContent = 'Click "Send OTP to Email" first for your User ID and registered email.';
+        return;
+      }
+      if (Date.now() > activeResetOtp.expiresAt) {
+        dom.resetPasscodeMsg.className = 'text-xs font-semibold text-rose-400';
+        dom.resetPasscodeMsg.textContent = 'OTP expired. Click "Send OTP to Email" to request a fresh code.';
+        return;
+      }
+      if (enteredOtp !== activeResetOtp.code) {
+        dom.resetPasscodeMsg.className = 'text-xs font-semibold text-rose-400';
+        dom.resetPasscodeMsg.textContent = 'Incorrect 6-digit OTP. Please check the code sent to your email.';
+        return;
+      }
+      if (newPasscode.length < 4) {
+        dom.resetPasscodeMsg.className = 'text-xs font-semibold text-rose-400';
+        dom.resetPasscodeMsg.textContent = 'New passcode must be at least 4 characters.';
+        return;
+      }
+
+      const users = getTeamUsersStore();
+      users[userId] = {
+        userId,
+        memberName: users[userId]?.memberName || currentMemberName || userId,
+        email,
+        passcode: newPasscode,
+        updatedAt: Date.now(),
+      };
+      saveTeamUsersStore(users);
+      activeResetOtp = null;
+      recordLoginAudit('PASSCODE_RESET', `Reset passcode via Email OTP sent to ${email}`, users[userId].memberName, email, userId);
+      saveLocalState();
+
+      dom.resetPasscodeMsg.className = 'text-xs font-semibold text-emerald-400';
+      dom.resetPasscodeMsg.textContent = `OTP verified! New passcode saved for @${userId}. Returning to Sign In...`;
+
+      setTimeout(() => {
+        dom.forgotPasscodeForm?.classList.add('hidden');
+        dom.teamAccessForm?.classList.remove('hidden');
+        dom.resetPasscodeMsg?.classList.add('hidden');
+        dom.otpSentBadge?.classList.add('hidden');
+        setGateMode('signin');
+        if (dom.gateUserIdInput) dom.gateUserIdInput.value = userId;
+        if (dom.gatePasscodeInput) dom.gatePasscodeInput.value = '';
+      }, 900);
+    }
+
+    function openTeamAccessGate(initialMode = 'signin') {
+      activeResetOtp = null;
+      dom.otpSentBadge?.classList.add('hidden');
+      dom.forgotPasscodeForm?.classList.add('hidden');
+      dom.teamAccessForm?.classList.remove('hidden');
+      setGateMode(initialMode);
+      if (dom.gateMemberNameInput) dom.gateMemberNameInput.value = currentMemberName === 'Biomed Tech' ? '' : currentMemberName;
+      if (dom.gateEmailInput) dom.gateEmailInput.value = currentUserEmail || '';
+      if (dom.accessCodeInput) dom.accessCodeInput.value = '';
+      if (dom.gateUserIdInput) dom.gateUserIdInput.value = currentUserId;
+      if (dom.gatePasscodeInput) dom.gatePasscodeInput.value = '';
+      if (dom.gateConfirmPasscodeInput) dom.gateConfirmPasscodeInput.value = '';
+      updateHeaderIdentity();
+      dom.accessCodeError?.classList.add('hidden');
+      dom.teamAccessModal?.classList.remove('hidden');
+      setTimeout(() => dom.gateMemberNameInput?.focus(), 50);
+    }
+
+    function checkTeamAccessOnLoad() {
+      const unlocked = localStorage.getItem('ps_team_unlocked') === 'true';
+      if (!unlocked) {
+        openTeamAccessGate('signin');
+      }
+    }
+
+    // Export / Import Backups
+    function exportJsonBackup() {
+      const payload = JSON.stringify(
+        {
+          room: currentTeamRoom,
+          exportedAt: new Date().toISOString(),
+          parts: committedParts,
+          currentLocations,
+          lastLocations,
+          modificationLogs,
+        },
+        null,
+        2
+      );
+      downloadBlob(payload, `PartSearch_${currentTeamRoom}_${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
+      showToast('Exported JSON backup');
+    }
+
+    function exportCsvBackup() {
+      const headers = ['Part Number', 'Description', 'Category', 'Available (Left)', 'Parts Used', 'Always Stock', 'Current Location', 'Last Used Location', 'Last WO #', 'Last Asset #', 'Updated By'];
+      const rows = committedParts.map((p) =>
+        [
+          p.partNumber,
+          p.name,
+          p.category,
+          p.qtyAvailable,
+          p.qtyUsed || 0,
+          p.alwaysStock ? 'Yes' : 'No',
+          p.currentLocation,
+          p.lastUsedLocation,
+          p.lastWoNumber,
+          p.lastAssetNumber,
+          p.updatedBy,
+        ]
+          .map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`)
+          .join(',')
+      );
+      downloadBlob([headers.join(','), ...rows].join('\n'), `PartSearch_${currentTeamRoom}_${new Date().toISOString().slice(0, 10)}.csv`, 'text/csv');
+      showToast('Exported CSV spreadsheet');
+    }
+
+    function downloadBlob(content, filename, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function importBackupFile(file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const parsed = JSON.parse(ev.target.result);
+          if (!parsed || !Array.isArray(parsed.parts)) {
+            showToast('Invalid JSON backup file.');
+            return;
+          }
+          committedParts = parsed.parts.map(normalizePart);
+          pendingParts = deepClone(committedParts);
+          if (Array.isArray(parsed.currentLocations)) currentLocations = parsed.currentLocations;
+          if (Array.isArray(parsed.lastLocations)) lastLocations = parsed.lastLocations;
+          if (Array.isArray(parsed.modificationLogs)) modificationLogs = parsed.modificationLogs;
+          undoStack = [];
+          pendingLogs = [];
+          saveLocalState();
+          renderParts();
+          updatePendingBar();
+          showToast('Imported JSON backup successfully!');
+        } catch (err) {
+          showToast('Could not parse backup file.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Delegated Card Actions
+    bind(dom.partsGrid, 'click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const id = btn.dataset.id;
+      if (action === 'minus-one') adjustPartStock(id, -1);
+      if (action === 'plus-one') adjustPartStock(id, 1);
+      if (action === 'mark-zero') markPartZero(id);
+      if (action === 'update-usage') openUsageModal(id);
+      if (action === 'edit-part') {
+        const part = pendingParts.find((p) => p.id === id);
+        if (part) openAddPartModal(part);
+      }
+      if (action === 'delete-part') deletePartEntry(id);
+      if (action === 'view-photo') {
+        const part = pendingParts.find((p) => p.id === id);
+        if (part && part.photoDataUrl) {
+          if (dom.lightboxImg) dom.lightboxImg.src = part.photoDataUrl;
+          dom.photoLightbox?.classList.remove('hidden');
+        }
+      }
+    });
+
+    // Initialize Application on Load
+    function init() {
+      loadLocalState();
+      bindEvents();
+      updateHeaderIdentity();
+      renderParts();
+      updatePendingBar();
+      checkTeamAccessOnLoad();
+
+      setInterval(() => {
+        upsertCurrentSession();
+        saveLocalState();
+      }, 30000);
+    }
+
+    init();
+  </script>
+</body>
+</html>
