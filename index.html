@@ -9,6 +9,8 @@
   <title>PartSearch — Biomedical Parts &amp; Inventory</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -541,6 +543,32 @@
   </div>
 
   <script>
+    // Firebase Real-Time Cloud Configuration (noblemed-parts-598a7)
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyB73gm9fM0a9JDxvYQQLsl6x3a0GqzIu60",
+      authDomain: "noblemed-parts-598a7.firebaseapp.com",
+      projectId: "noblemed-parts-598a7",
+      storageBucket: "noblemed-parts-598a7.firebasestorage.app",
+      messagingSenderId: "671602923396",
+      appId: "1:671602923396:web:b1f9d752ee5617eb50afd1",
+      measurementId: "G-3R3746Q7GR"
+    };
+
+    let firestoreDb = null;
+    let unsubscribeRoomSnapshot = null;
+    let isRemoteSyncReady = false;
+
+    try {
+      if (typeof firebase !== 'undefined') {
+        if (!firebase.apps.length) {
+          firebase.initializeApp(FIREBASE_CONFIG);
+        }
+        firestoreDb = firebase.firestore();
+      }
+    } catch (fbErr) {
+      console.warn('Firebase init fallback to local:', fbErr);
+    }
+
     // Default Seed Inventory & Location Lists
     const TEAM_ACCESS_CODE = 'NOBLEMED6';
     const DEFAULT_CURRENT_LOCATIONS = ['Warehouse', 'CHN', 'CHS'];
@@ -625,6 +653,7 @@
     let modificationLogs = [];
     let loginAuditLogs = [];
     let teamSessions = [];
+    let cloudTeamUsers = {};
 
     let activeSearchQuery = '';
     let activeFilter = 'all';
@@ -655,6 +684,7 @@
 
       activeMemberLabel: document.getElementById('activeMemberLabel'),
       activityBadgeCount: document.getElementById('activityBadgeCount'),
+      syncStatusText: document.getElementById('syncStatusText'),
 
       openAddModalBtn: document.getElementById('openAddModalBtn'),
       addPartModal: document.getElementById('addPartModal'),
@@ -813,7 +843,75 @@
       return `partsearch_room_${currentTeamRoom}`;
     }
 
+    function updateCloudSyncBadge(label) {
+      if (dom.syncStatusText) {
+        dom.syncStatusText.textContent = label;
+      }
+    }
+
+    function subscribeToCloudRoom() {
+      if (!firestoreDb) {
+        updateCloudSyncBadge('Local Only');
+        return;
+      }
+      if (typeof unsubscribeRoomSnapshot === 'function') {
+        unsubscribeRoomSnapshot();
+      }
+      updateCloudSyncBadge('Connecting Cloud...');
+      const docRef = firestoreDb.collection('partsearch_rooms').doc(currentTeamRoom);
+
+      unsubscribeRoomSnapshot = docRef.onSnapshot(
+        (docSnap) => {
+          isRemoteSyncReady = true;
+          updateCloudSyncBadge('Cloud Live');
+
+          if (docSnap.exists) {
+            const data = docSnap.data() || {};
+            if (Array.isArray(data.parts)) {
+              committedParts = data.parts.map(normalizePart);
+              if (undoStack.length === 0) {
+                pendingParts = deepClone(committedParts);
+              }
+            }
+            if (Array.isArray(data.currentLocations) && data.currentLocations.length) {
+              currentLocations = data.currentLocations;
+            }
+            if (Array.isArray(data.lastLocations) && data.lastLocations.length) {
+              lastLocations = data.lastLocations;
+            }
+            if (Array.isArray(data.modificationLogs)) {
+              modificationLogs = data.modificationLogs;
+            }
+            if (Array.isArray(data.loginAuditLogs)) {
+              loginAuditLogs = data.loginAuditLogs;
+            }
+            if (Array.isArray(data.teamSessions)) {
+              teamSessions = data.teamSessions;
+            }
+            if (data.teamUsers && typeof data.teamUsers === 'object') {
+              cloudTeamUsers = data.teamUsers;
+              localStorage.setItem(`ps_team_users_${currentTeamRoom}`, JSON.stringify(cloudTeamUsers));
+            }
+            saveLocalOnly();
+            renderParts();
+            updatePendingBar();
+          } else {
+            saveLocalState();
+          }
+        },
+        (err) => {
+          console.warn('Firestore snapshot error:', err);
+          updateCloudSyncBadge('Cloud Offline');
+        }
+      );
+    }
+
     function loadLocalState() {
+      try {
+        cloudTeamUsers = JSON.parse(localStorage.getItem(`ps_team_users_${currentTeamRoom}`) || '{}');
+      } catch (e) {
+        cloudTeamUsers = {};
+      }
       try {
         const saved = JSON.parse(localStorage.getItem(getStorageKey()) || 'null');
         if (saved && Array.isArray(saved.parts)) {
@@ -838,10 +936,11 @@
       undoStack = [];
       pendingLogs = [];
       upsertCurrentSession();
-      saveLocalState();
+      saveLocalOnly();
+      subscribeToCloudRoom();
     }
 
-    function saveLocalState() {
+    function saveLocalOnly() {
       try {
         localStorage.setItem(
           getStorageKey(),
@@ -857,6 +956,32 @@
         );
       } catch (err) {
         console.warn('Storage save warning:', err);
+      }
+    }
+
+    function saveLocalState() {
+      saveLocalOnly();
+      if (firestoreDb) {
+        firestoreDb
+          .collection('partsearch_rooms')
+          .doc(currentTeamRoom)
+          .set(
+            {
+              parts: committedParts,
+              currentLocations,
+              lastLocations,
+              modificationLogs,
+              loginAuditLogs,
+              teamSessions,
+              teamUsers: cloudTeamUsers,
+              updatedAt: Date.now(),
+            },
+            { merge: true }
+          )
+          .catch((err) => {
+            console.warn('Firestore write warning:', err);
+            updateCloudSyncBadge('Check Firestore Rules');
+          });
       }
     }
 
@@ -1724,14 +1849,17 @@
 
     function getTeamUsersStore() {
       try {
-        return JSON.parse(localStorage.getItem(`ps_team_users_${currentTeamRoom}`) || '{}');
+        const localUsers = JSON.parse(localStorage.getItem(`ps_team_users_${currentTeamRoom}`) || '{}');
+        return { ...localUsers, ...cloudTeamUsers };
       } catch (err) {
-        return {};
+        return { ...cloudTeamUsers };
       }
     }
 
     function saveTeamUsersStore(usersObj) {
-      localStorage.setItem(`ps_team_users_${currentTeamRoom}`, JSON.stringify(usersObj));
+      cloudTeamUsers = { ...cloudTeamUsers, ...usersObj };
+      localStorage.setItem(`ps_team_users_${currentTeamRoom}`, JSON.stringify(cloudTeamUsers));
+      saveLocalState();
     }
 
     function setGateMode(mode) {
