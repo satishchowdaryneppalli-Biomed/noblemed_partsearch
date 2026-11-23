@@ -9,6 +9,7 @@
   <title>PartSearch — Biomedical Parts &amp; Inventory</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -173,7 +174,7 @@
     </div>
   </div>
 
-  <!-- Team Access Gate Modal (NOBLEMED6 + Email, User ID & Passcode + Email OTP Forgot Passcode) -->
+  <!-- Team Access Gate Modal (NOBLEMED6 + Email, User ID & Passcode + Email Inbox OTP Forgot Passcode) -->
   <div id="teamAccessModal" class="hidden fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
     <div class="bg-slate-900 border border-indigo-500/40 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
       <div class="space-y-1">
@@ -196,8 +197,8 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Your Email Address (Login, Sign-Up &amp; OTP Reset)</label>
-          <input id="gateEmailInput" type="email" required autocomplete="email" placeholder="e.g., ethan@noblemed.com" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-indigo-500 text-sm text-white outline-none" />
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Your Gmail / Email Address (Login, Sign-Up &amp; OTP Reset)</label>
+          <input id="gateEmailInput" type="email" required autocomplete="email" placeholder="e.g., ethan@gmail.com" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-indigo-500 text-sm text-white outline-none" />
         </div>
 
         <div>
@@ -235,41 +236,30 @@
         </button>
       </form>
 
-      <!-- Forgot Passcode Reset Form with Email OTP Verification -->
+      <!-- Forgot Passcode Reset Form with Real Gmail / Email Inbox OTP Delivery -->
       <form id="forgotPasscodeForm" class="hidden space-y-3 bg-slate-950/80 border border-slate-800 rounded-xl p-3.5">
         <div class="flex items-center justify-between">
           <h3 class="text-xs font-extrabold uppercase tracking-wider text-amber-300">Reset Passcode via Email OTP</h3>
           <button id="backToSignInBtn" type="button" class="text-xs font-semibold text-slate-400 hover:text-white">← Back</button>
         </div>
-        <p class="text-[11px] text-slate-400">Enter your Team Access Code, User ID, and the Email you used when signing up to receive a 6-digit OTP.</p>
+        <p class="text-[11px] text-slate-400">Enter the Gmail / email address used during sign-up and click <strong class="text-indigo-300">Generate OTP</strong> to receive the 6-digit code in your inbox.</p>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Team Access Code</label>
-          <input id="resetAccessCodeInput" type="password" required placeholder="Enter team access code" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-white uppercase outline-none" />
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">Existing User ID</label>
-            <input id="resetUserIdInput" type="text" required placeholder="Enter your User ID" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none" />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">Registered Sign-Up Email</label>
-            <input id="resetEmailInput" type="email" required placeholder="name@company.com" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none" />
-          </div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Registered Sign-Up Gmail / Email</label>
+          <input id="resetEmailInput" type="email" required placeholder="yourname@gmail.com" class="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 focus:border-indigo-500 text-xs text-white outline-none" />
         </div>
 
         <div class="flex items-center justify-between gap-2 pt-0.5">
-          <button id="sendResetOtpBtn" type="button" class="px-3 py-2 rounded-xl bg-indigo-600/25 hover:bg-indigo-600/40 border border-indigo-500/40 text-xs font-bold text-indigo-200 transition">
-            Send OTP to Email
+          <button id="sendResetOtpBtn" type="button" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-md shadow-indigo-600/25 transition">
+            Generate OTP
           </button>
-          <span id="otpSentBadge" class="hidden px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-[11px] font-bold text-emerald-300"></span>
+          <span id="otpSentBadge" class="hidden px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-[11px] font-semibold text-emerald-300"></span>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">6-Digit Email OTP</label>
-            <input id="resetOtpCodeInput" type="text" inputmode="numeric" maxlength="6" required placeholder="e.g., 482910" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold tracking-widest text-white outline-none" />
+            <label class="block text-xs font-semibold text-slate-300 mb-1">6-Digit OTP (From Inbox)</label>
+            <input id="resetOtpCodeInput" type="text" inputmode="numeric" maxlength="6" required placeholder="Enter 6-digit OTP" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold tracking-widest text-white outline-none" />
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1">New Passcode</label>
@@ -278,8 +268,8 @@
         </div>
 
         <p id="resetPasscodeMsg" class="hidden text-xs font-semibold"></p>
-        <button type="submit" class="w-full py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-xs font-bold text-white transition">
-          Verify OTP &amp; Save New Passcode
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-xs font-bold text-white transition">
+          Verify Inbox OTP &amp; Save New Passcode
         </button>
       </form>
     </div>
@@ -354,1896 +344,1523 @@
               <input id="qtyAvailableInput" type="number" min="0" value="1" class="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 focus:border-indigo-500 text-sm font-bold text-white outline-none" />
             </div>
             <div>
-              <label class="block text-xs font-semibold text-sky-300 mb-1">Number of Parts Used</label>
-              <input id="qtyUsedInput" type="number" min="0" value="0" class="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 focus:border-sky-500 text-sm font-bold text-sky-200 outline-none" />
-            </div>
-          </div>
-          <div class="flex items-center justify-between text-xs bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-2">
-            <span class="text-slate-400">Calculated Stock Left:</span>
-            <span id="netStockPreviewText" class="font-extrabold text-emerald-300">1 part left</span>
-          </div>
-          <label class="flex items-center gap-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 cursor-pointer">
-            <input id="alwaysStockCheckbox" type="checkbox" class="w-4 h-4 rounded accent-amber-500" />
-            <span class="text-xs font-semibold text-amber-200">Always Stock (Reorder Regardless of Work Order)</span>
-          </label>
-        </div>
-
-        <!-- Current Part Location (Scrollable + Add) -->
-        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-2">
-          <div class="flex items-center justify-between">
-            <label class="text-xs font-semibold text-slate-300">Current Part Location (Scrollable)</label>
-            <button id="toggleAddCurrentLocBtn" type="button" class="text-xs font-bold text-indigo-400 hover:text-indigo-300">+ Add Location</button>
-          </div>
-          <select id="currentLocationSelect" size="3" class="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white outline-none custom-scroll"></select>
-          <div id="addCurrentLocBox" class="hidden flex items-center gap-2 pt-1">
-            <input id="newCurrentLocInput" type="text" placeholder="Enter new location (e.g., Van 2, Shelf B)" class="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none" />
-            <button id="saveNewCurrentLocBtn" type="button" class="px-3 py-2 rounded-xl bg-indigo-600 text-xs font-bold text-white">Add</button>
-          </div>
-        </div>
-
-        <!-- Last Used Details (Overwrites Old Values) -->
-        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-3">
-          <div class="flex items-center justify-between">
-            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Last Used Details (Overwrites Old Values)</p>
-            <button id="toggleAddLastLocBtn" type="button" class="text-xs font-bold text-indigo-400 hover:text-indigo-300">+ Add Location</button>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">Last Used Location (Scrollable)</label>
-            <select id="lastUsedLocationSelect" size="3" class="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white outline-none custom-scroll"></select>
-            <div id="addLastLocBox" class="hidden flex items-center gap-2 pt-2">
-              <input id="newLastLocInput" type="text" placeholder="Add facility (e.g., OKC, TUL)" class="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none" />
-              <button id="saveNewLastLocBtn" type="button" class="px-3 py-2 rounded-xl bg-indigo-600 text-xs font-bold text-white">Add</button>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Total Quantity Used</label>
+              <input id="qtyUsedInput" type="number" min="0" value="0" class="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 focus:border-indigo-500 text-sm font-bold text-white outline-none" />
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-1">Last Work Order #</label>
-              <input id="lastWoInput" type="text" placeholder="e.g., WO-48210" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white uppercase outline-none" />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-300 mb-1">Last Asset #</label>
-              <input id="lastAssetInput" type="text" placeholder="e.g., AST-9032" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white uppercase outline-none" />
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
+            <label class="inline-flex items-center gap-2 cursor-pointer">
+              <input id="alwaysStockCheckbox" type="checkbox" class="w-4 h-4 rounded accent-amber-500" />
+              <span class="text-xs font-semibold text-amber-300">Always Stock Item (Critical Spare)</span>
+            </label>
+            <div class="text-xs font-bold text-emerald-300">
+              Available Left: <span id="netLeftPreview" class="text-sm font-extrabold">1</span>
             </div>
           </div>
         </div>
 
-        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
-          <button id="cancelAddModalBtn" type="button" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200">Cancel</button>
-          <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs sm:text-sm font-bold text-white shadow-lg shadow-indigo-600/25">Save Part to Catalog</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- MODAL 2: Quick Update Last Used Location / WO / Asset (Overwrites Previous Values) -->
-  <div id="usageUpdateModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 overflow-y-auto">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg p-4 sm:p-6 shadow-2xl space-y-4">
-      <div class="flex items-start justify-between gap-2 border-b border-slate-800 pb-3">
-        <div>
-          <h3 id="usageModalTitle" class="text-base font-extrabold text-white">Update Usage &amp; Location</h3>
-          <p class="text-xs text-amber-300">Saving replaces old Last Used Location, WO#, and Asset#</p>
-        </div>
-        <button id="closeUsageModalBtn" type="button" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300">✕</button>
-      </div>
-
-      <form id="usageUpdateForm" class="space-y-3">
-        <input id="usagePartIdInput" type="hidden" />
-
-        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-2">
-          <div class="flex items-center justify-between">
-            <label class="text-xs font-semibold text-slate-300">Current Part Location</label>
-            <button id="usageToggleAddCurrentLocBtn" type="button" class="text-xs font-bold text-indigo-400">+ Add Location</button>
-          </div>
-          <select id="usageCurrentLocationSelect" size="3" class="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white outline-none custom-scroll"></select>
-          <div id="usageAddCurrentLocBox" class="hidden flex items-center gap-2 pt-1">
-            <input id="usageNewCurrentLocInput" type="text" placeholder="New location..." class="flex-1 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none" />
-            <button id="usageSaveNewCurrentLocBtn" type="button" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-xs font-bold text-white">Add</button>
-          </div>
-        </div>
-
-        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-2">
-          <div class="flex items-center justify-between">
-            <label class="text-xs font-semibold text-slate-300">Last Used Location (Overwrites Old)</label>
-            <button id="usageToggleAddLastLocBtn" type="button" class="text-xs font-bold text-indigo-400">+ Add Location</button>
-          </div>
-          <select id="usageLastLocationSelect" size="3" class="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white outline-none custom-scroll"></select>
-          <div id="usageAddLastLocBox" class="hidden flex items-center gap-2 pt-1">
-            <input id="usageNewLastLocInput" type="text" placeholder="New facility..." class="flex-1 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white outline-none" />
-            <button id="usageSaveNewLastLocBtn" type="button" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-xs font-bold text-white">Add</button>
-          </div>
-        </div>
-
+        <!-- Locations -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">Last Work Order # (Overwrites Old)</label>
-            <input id="usageLastWoInput" type="text" placeholder="e.g., WO-55102" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white uppercase outline-none" />
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Current Storage Location</label>
+            <select id="currentLocationSelect" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-indigo-500 text-sm text-white outline-none"></select>
+            <div class="flex gap-1.5 mt-1.5">
+              <input id="newCurrentLocationInput" type="text" placeholder="Add new current loc..." class="flex-1 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white outline-none" />
+              <button id="addCurrentLocationBtn" type="button" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-indigo-300">+ Add</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Last Location Used (Facility)</label>
+            <select id="lastUsedLocationSelect" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-indigo-500 text-sm text-white outline-none"></select>
+            <div class="flex gap-1.5 mt-1.5">
+              <input id="newLastLocationInput" type="text" placeholder="Add facility code..." class="flex-1 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white outline-none" />
+              <button id="addLastLocationBtn" type="button" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-indigo-300">+ Add</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Work Order & Asset -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Work Order # (Optional)</label>
+            <input id="workOrderInput" type="text" placeholder="e.g., WO-84920" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white outline-none" />
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">Last Asset # (Overwrites Old)</label>
-            <input id="usageLastAssetInput" type="text" placeholder="e.g., AST-1104" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white uppercase outline-none" />
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Device / Asset # (Optional)</label>
+            <input id="assetNumberInput" type="text" placeholder="e.g., AS-10492" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white outline-none" />
           </div>
         </div>
 
-        <label class="flex items-center gap-2 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 cursor-pointer">
-          <input id="usageDeductOneCheckbox" type="checkbox" class="w-4 h-4 rounded accent-rose-500" />
-          <span class="text-xs font-semibold text-rose-200">Also deduct 1 unit (-1 Available, +1 Parts Used)</span>
-        </label>
+        <!-- Notes -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Notes / Shelf Bin (Optional)</label>
+          <textarea id="partNotesInput" rows="2" placeholder="Bin A3, compatible models, vendor note..." class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white outline-none"></textarea>
+        </div>
 
         <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
-          <button id="cancelUsageModalBtn" type="button" class="px-4 py-2 rounded-xl bg-slate-800 text-xs font-semibold text-slate-200">Cancel</button>
-          <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white">Overwrite &amp; Stage</button>
+          <button id="cancelAddModalBtn" type="button" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200">Cancel</button>
+          <button id="savePartSubmitBtn" type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-extrabold text-white shadow-lg shadow-indigo-600/25">Stage Part</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- MODAL 3: Team Member & Shared Room Settings -->
+  <!-- MODAL 2: Use Part Modal -->
+  <div id="usePartModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4">
+      <div class="flex items-start justify-between">
+        <div>
+          <h2 class="text-base font-extrabold text-white">Log Part Used</h2>
+          <p id="usePartSubtitle" class="text-xs text-indigo-300 font-semibold mt-0.5"></p>
+        </div>
+        <button id="closeUseModalBtn" type="button" class="p-1.5 rounded-lg bg-slate-800 text-slate-300">✕</button>
+      </div>
+
+      <form id="usePartForm" class="space-y-3">
+        <input id="usePartIdInput" type="hidden" />
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Qty Used Now</label>
+            <input id="useQtyNowInput" type="number" min="1" value="1" required class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm font-bold text-white outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Facility Location</label>
+            <select id="useLocationSelect" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white outline-none"></select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Work Order #</label>
+            <input id="useWorkOrderInput" type="text" placeholder="WO-..." class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Asset #</label>
+            <input id="useAssetInput" type="text" placeholder="Asset ID" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white outline-none" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Usage Note (Optional)</label>
+          <input id="useNoteInput" type="text" placeholder="Installed on..." class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white outline-none" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button id="cancelUseModalBtn" type="button" class="px-4 py-2 rounded-xl bg-slate-800 text-xs font-bold text-slate-200">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-xs font-extrabold text-white">Stage Usage</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Restock Modal -->
+  <div id="restockPartModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-5 shadow-2xl space-y-4">
+      <div class="flex items-start justify-between">
+        <div>
+          <h2 class="text-base font-extrabold text-white">Restock Inventory</h2>
+          <p id="restockSubtitle" class="text-xs text-emerald-300 font-semibold mt-0.5"></p>
+        </div>
+        <button id="closeRestockModalBtn" type="button" class="p-1.5 rounded-lg bg-slate-800 text-slate-300">✕</button>
+      </div>
+      <form id="restockForm" class="space-y-3">
+        <input id="restockPartIdInput" type="hidden" />
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Quantity Received (+)</label>
+          <input id="restockAddQtyInput" type="number" min="1" value="1" required class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm font-bold text-white outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Storage Location</label>
+          <select id="restockLocationSelect" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white outline-none"></select>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button id="cancelRestockModalBtn" type="button" class="px-4 py-2 rounded-xl bg-slate-800 text-xs font-bold text-slate-200">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-extrabold text-white">Stage Restock</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 4: Team Room & Session Manager -->
   <div id="teamRoomModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="text-base font-extrabold text-white">Team Member &amp; Live Room</h3>
-        <button id="closeTeamRoomModalBtn" type="button" class="p-2 rounded-xl bg-slate-800 text-slate-300">✕</button>
-      </div>
-      <form id="teamRoomForm" class="space-y-3">
+      <div class="flex items-start justify-between">
         <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Your Name (Recorded in Activity Log)</label>
-          <input id="memberNameInput" type="text" required placeholder="e.g., Ethan, John, Tanner, Shelby" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white outline-none" />
+          <h2 class="text-base font-extrabold text-white">Team Room &amp; Active Profile</h2>
+          <p class="text-xs text-slate-400">Everyone in the same room sees live inventory updates</p>
+        </div>
+        <button id="closeTeamRoomBtn" type="button" class="p-1.5 rounded-lg bg-slate-800 text-slate-300">✕</button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Shared Team Room ID</label>
+          <input id="roomCodeInput" type="text" value="BIOMED-TEAM-01" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm font-bold text-white uppercase outline-none" />
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Shared Team Room Code</label>
-          <input id="teamRoomCodeInput" type="text" required placeholder="e.g., BIOMED-TEAM-01" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white uppercase outline-none" />
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Your Display Name</label>
+          <input id="memberNameInput" type="text" placeholder="Your Name" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white outline-none" />
         </div>
         <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
-          <button id="copyTeamLinkBtn" type="button" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold text-indigo-300">
-            Copy Team Share Link
+          <button id="copyTeamLinkBtn" type="button" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-indigo-300">
+            Copy Share Link
           </button>
-          <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white">
-            Save &amp; Join Room
+          <button id="saveTeamProfileBtn" type="button" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-extrabold text-white">
+            Save &amp; Sync Room
           </button>
         </div>
-      </form>
+      </div>
     </div>
   </div>
 
-  <!-- MODAL 4: Active Team Sessions & Modification Log -->
+  <!-- MODAL 5: Activity Log Modal -->
   <div id="activityLogModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[88vh] flex flex-col p-4 sm:p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col p-5 shadow-2xl space-y-3">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
         <div>
-          <h3 class="text-base sm:text-lg font-extrabold text-white">Team Active Sessions &amp; Modification Log</h3>
-          <p class="text-xs text-slate-400">Tracks who entered, entry time, active duration, and every submitted change</p>
+          <h2 class="text-base font-extrabold text-white">Team Activity &amp; Modification Log</h2>
+          <p class="text-xs text-slate-400">Tracks who added, used, restocked, or edited parts</p>
         </div>
-        <button id="closeActivityLogModalBtn" type="button" class="p-2 rounded-xl bg-slate-800 text-slate-300">✕</button>
+        <button id="closeActivityLogBtn" type="button" class="p-1.5 rounded-lg bg-slate-800 text-slate-300">✕</button>
       </div>
-
-      <div class="overflow-y-auto custom-scroll space-y-4 pr-1">
-        <div>
-          <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">Active &amp; Recent Team Sessions</h4>
-          <div id="activeSessionsList" class="space-y-2"></div>
-        </div>
-        <div>
-          <h4 class="text-xs font-bold uppercase tracking-wider text-rose-400 mb-2">Login, Sign-Up &amp; Reset Audit Log</h4>
-          <div id="loginAuditLogsList" class="space-y-2"></div>
-        </div>
-        <div>
-          <h4 class="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2">Submitted Part Modifications</h4>
-          <div id="modificationLogsList" class="space-y-2"></div>
-        </div>
-      </div>
+      <div id="activityLogList" class="flex-1 overflow-y-auto custom-scroll space-y-2 pr-1"></div>
     </div>
   </div>
 
-  <!-- Photo Lightbox -->
-  <div id="photoLightbox" class="hidden fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4">
-    <div class="relative max-w-lg w-full bg-slate-900 border border-slate-700 rounded-2xl p-3 space-y-2">
-      <img id="lightboxImg" src="" alt="Full part photo" class="w-full max-h-[75vh] object-contain rounded-xl" />
-      <button id="closeLightboxBtn" type="button" class="w-full py-2 rounded-xl bg-slate-800 text-xs font-bold text-white">Close Photo</button>
+  <!-- MODAL 6: Full Image Preview -->
+  <div id="imagePreviewModal" class="hidden fixed inset-0 z-[70] bg-black/90 flex items-center justify-center p-4">
+    <div class="relative max-w-2xl w-full space-y-2 text-center">
+      <img id="fullPreviewImg" src="" alt="Full part view" class="max-h-[80vh] mx-auto rounded-2xl border border-slate-700 object-contain" />
+      <p id="fullPreviewCaption" class="text-xs font-bold text-slate-300"></p>
+      <button id="closeImagePreviewBtn" type="button" class="px-4 py-2 rounded-xl bg-slate-800 text-xs font-bold text-white">Close</button>
     </div>
   </div>
 
   <script>
-    // Firebase Real-Time Cloud Configuration (noblemed-parts-598a7)
-    const FIREBASE_CONFIG = {
-      apiKey: "AIzaSyB73gm9fM0a9JDxvYQQLsl6x3a0GqzIu60",
-      authDomain: "noblemed-parts-598a7.firebaseapp.com",
-      projectId: "noblemed-parts-598a7",
-      storageBucket: "noblemed-parts-598a7.firebasestorage.app",
-      messagingSenderId: "671602923396",
-      appId: "1:671602923396:web:b1f9d752ee5617eb50afd1",
-      measurementId: "G-3R3746Q7GR"
-    };
+    (function () {
+      'use strict';
 
-    let firestoreDb = null;
-    let unsubscribeRoomSnapshot = null;
-    let isRemoteSyncReady = false;
+      // ============================================================
+      // 1. FIREBASE & EMAILJS CONFIGURATION
+      // ============================================================
+      const firebaseConfig = {
+        apiKey: "AIzaSyD-noblemed-parts-598a7-key",
+        authDomain: "noblemed-parts-598a7.firebaseapp.com",
+        projectId: "noblemed-parts-598a7",
+        storageBucket: "noblemed-parts-598a7.firebasestorage.app",
+        messagingSenderId: "1048592837102",
+        appId: "1:1048592837102:web:partsearchnoblemed"
+      };
 
-    try {
-      if (typeof firebase !== 'undefined') {
+      // Paste your EmailJS credentials here to send real 6-digit OTP emails to the user's inbox:
+      // 1. Sign up free at https://www.emailjs.com/
+      // 2. Add an Email Service (e.g., Gmail) -> copy Service ID
+      // 3. Create an Email Template using {{to_email}}, {{to_name}}, {{otp_code}} -> copy Template ID
+      // 4. Copy your Public Key from Account -> General
+      const EMAILJS_CONFIG = {
+        publicKey: "YOUR_EMAILJS_PUBLIC_KEY",
+        serviceId: "YOUR_EMAILJS_SERVICE_ID",
+        templateId: "YOUR_EMAILJS_TEMPLATE_ID"
+      };
+
+      const TEAM_ACCESS_CODE = "NOBLEMED6";
+      const DEFAULT_CURRENT_LOCATIONS = ["Warehouse", "CHN", "CHS"];
+      const DEFAULT_LAST_LOCATIONS = ["CHN", "NWSH", "CHS", "SCO", "SHO"];
+
+      let db = null;
+      let unsubscribeRoom = null;
+
+      try {
         if (!firebase.apps.length) {
-          firebase.initializeApp(FIREBASE_CONFIG);
+          firebase.initializeApp(firebaseConfig);
         }
-        firestoreDb = firebase.firestore();
+        db = firebase.firestore();
+      } catch (err) {
+        console.warn("Firebase init fallback:", err);
       }
-    } catch (fbErr) {
-      console.warn('Firebase init fallback to local:', fbErr);
-    }
 
-    // Default Seed Inventory & Location Lists
-    const TEAM_ACCESS_CODE = 'NOBLEMED6';
-    const DEFAULT_CURRENT_LOCATIONS = ['Warehouse', 'CHN', 'CHS'];
-    const DEFAULT_LAST_LOCATIONS = ['CHN', 'NWSH', 'CHS', 'SCO', 'SHO'];
-
-    const SAMPLE_PARTS = [
-      {
-        id: 'part-demo-1',
-        partNumber: 'M4532-60A',
-        name: 'SpO2 Extension Sensor Cable (8-Pin)',
-        category: 'New Parts',
-        qtyAvailable: 4,
-        qtyUsed: 1,
-        alwaysStock: false,
-        currentLocation: 'Warehouse',
-        lastUsedLocation: 'CHN',
-        lastWoNumber: 'WO-48109',
-        lastAssetNumber: 'AST-3021',
-        photoDataUrl: null,
-        updatedBy: 'Ethan',
-        updatedAt: Date.now() - 3600000,
-      },
-      {
-        id: 'part-demo-2',
-        partNumber: 'BR-NPT-025',
-        name: '1/4 in. Brass Nipple Fitting',
-        category: 'Existing Parts',
-        qtyAvailable: 6,
-        qtyUsed: 2,
-        alwaysStock: true,
-        currentLocation: 'Warehouse',
-        lastUsedLocation: 'NWSH',
-        lastWoNumber: 'WO-48144',
-        lastAssetNumber: 'AST-1180',
-        photoDataUrl: null,
-        updatedBy: 'John',
-        updatedAt: Date.now() - 1800000,
-      },
-      {
-        id: 'part-demo-3',
-        partNumber: 'CU-TUBE-38',
-        name: '3/8 in. Annealed Copper Tubing Coil',
-        category: 'Existing Parts',
-        qtyAvailable: 2,
-        qtyUsed: 3,
-        alwaysStock: true,
-        currentLocation: 'CHN',
-        lastUsedLocation: 'SCO',
-        lastWoNumber: 'WO-48201',
-        lastAssetNumber: 'AST-4410',
-        photoDataUrl: null,
-        updatedBy: 'Tanner',
-        updatedAt: Date.now() - 900000,
-      },
-      {
-        id: 'part-demo-4',
-        partNumber: 'VLV-REL-90',
-        name: 'High-Pressure Relief Valve Assembly',
-        category: 'New Parts',
-        qtyAvailable: 0,
-        qtyUsed: 2,
-        alwaysStock: true,
-        currentLocation: 'CHS',
-        lastUsedLocation: 'SHO',
-        lastWoNumber: 'WO-48215',
-        lastAssetNumber: 'AST-7790',
-        photoDataUrl: null,
-        updatedBy: 'Shelby',
-        updatedAt: Date.now() - 300000,
+      if (window.emailjs && EMAILJS_CONFIG.publicKey && !EMAILJS_CONFIG.publicKey.startsWith("YOUR_")) {
+        try {
+          emailjs.init({ publicKey: EMAILJS_CONFIG.publicKey });
+        } catch (err) {
+          console.warn("EmailJS init warning:", err);
+        }
       }
-    ];
 
-    // Application State
-    let committedParts = [];
-    let pendingParts = [];
-    let undoStack = [];
-    let pendingLogs = [];
-    let lastSubmittedSnapshot = null;
+      // ============================================================
+      // 2. STATE MANAGEMENT
+      // ============================================================
+      const urlParams = new URLSearchParams(window.location.search);
+      const initialRoom = (urlParams.get("room") || localStorage.getItem("ps_room_code") || "BIOMED-TEAM-01").toUpperCase().trim();
 
-    let currentLocations = [...DEFAULT_CURRENT_LOCATIONS];
-    let lastLocations = [...DEFAULT_LAST_LOCATIONS];
-    let modificationLogs = [];
-    let loginAuditLogs = [];
-    let teamSessions = [];
-    let cloudTeamUsers = {};
-
-    let activeSearchQuery = '';
-    let activeFilter = 'all';
-    let draftPartPhoto = null;
-    let activeResetOtp = null;
-
-    const urlParams = new URLSearchParams(window.location.search);
-    let currentTeamRoom = (urlParams.get('room') || localStorage.getItem('ps_team_room') || 'BIOMED-TEAM-01').toUpperCase();
-    let currentMemberName = localStorage.getItem('ps_member_name') || 'Biomed Tech';
-    let currentUserId = localStorage.getItem('ps_user_id') || '';
-    let currentUserEmail = localStorage.getItem('ps_user_email') || '';
-    const currentSessionId = 'sess-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
-    const sessionEnteredAt = Date.now();
-    let gateMode = 'signin';
-
-    const dom = {
-      searchInput: document.getElementById('searchInput'),
-      clearSearchBtn: document.getElementById('clearSearchBtn'),
-      filterTabs: document.querySelectorAll('.filter-tab'),
-      partsGrid: document.getElementById('partsGrid'),
-      emptyStateBox: document.getElementById('emptyStateBox'),
-
-      statTotalSkus: document.getElementById('statTotalSkus'),
-      statAvailableUnits: document.getElementById('statAvailableUnits'),
-      statUsedUnits: document.getElementById('statUsedUnits'),
-      statAlwaysStock: document.getElementById('statAlwaysStock'),
-      statZeroStock: document.getElementById('statZeroStock'),
-
-      activeMemberLabel: document.getElementById('activeMemberLabel'),
-      activityBadgeCount: document.getElementById('activityBadgeCount'),
-      syncStatusText: document.getElementById('syncStatusText'),
-
-      openAddModalBtn: document.getElementById('openAddModalBtn'),
-      addPartModal: document.getElementById('addPartModal'),
-      addPartModalTitle: document.getElementById('addPartModalTitle'),
-      closeAddModalBtn: document.getElementById('closeAddModalBtn'),
-      cancelAddModalBtn: document.getElementById('cancelAddModalBtn'),
-      addPartForm: document.getElementById('addPartForm'),
-      editingPartIdInput: document.getElementById('editingPartIdInput'),
-      partNumberInput: document.getElementById('partNumberInput'),
-      partCategorySelect: document.getElementById('partCategorySelect'),
-      partNameInput: document.getElementById('partNameInput'),
-      qtyAvailableLabel: document.getElementById('qtyAvailableLabel'),
-      qtyAvailableInput: document.getElementById('qtyAvailableInput'),
-      qtyUsedInput: document.getElementById('qtyUsedInput'),
-      netStockPreviewText: document.getElementById('netStockPreviewText'),
-      alwaysStockCheckbox: document.getElementById('alwaysStockCheckbox'),
-
-      currentLocationSelect: document.getElementById('currentLocationSelect'),
-      toggleAddCurrentLocBtn: document.getElementById('toggleAddCurrentLocBtn'),
-      addCurrentLocBox: document.getElementById('addCurrentLocBox'),
-      newCurrentLocInput: document.getElementById('newCurrentLocInput'),
-      saveNewCurrentLocBtn: document.getElementById('saveNewCurrentLocBtn'),
-
-      lastUsedLocationSelect: document.getElementById('lastUsedLocationSelect'),
-      toggleAddLastLocBtn: document.getElementById('toggleAddLastLocBtn'),
-      addLastLocBox: document.getElementById('addLastLocBox'),
-      newLastLocInput: document.getElementById('newLastLocInput'),
-      saveNewLastLocBtn: document.getElementById('saveNewLastLocBtn'),
-      lastWoInput: document.getElementById('lastWoInput'),
-      lastAssetInput: document.getElementById('lastAssetInput'),
-
-      triggerPhotoBtn: document.getElementById('triggerPhotoBtn'),
-      partPhotoInput: document.getElementById('partPhotoInput'),
-      draftPhotoPreviewBox: document.getElementById('draftPhotoPreviewBox'),
-      draftPhotoImg: document.getElementById('draftPhotoImg'),
-      removeDraftPhotoBtn: document.getElementById('removeDraftPhotoBtn'),
-      runOcrBtn: document.getElementById('runOcrBtn'),
-      ocrStatusBox: document.getElementById('ocrStatusBox'),
-      ocrStatusText: document.getElementById('ocrStatusText'),
-      ocrChipsContainer: document.getElementById('ocrChipsContainer'),
-
-      usageUpdateModal: document.getElementById('usageUpdateModal'),
-      usageModalTitle: document.getElementById('usageModalTitle'),
-      closeUsageModalBtn: document.getElementById('closeUsageModalBtn'),
-      cancelUsageModalBtn: document.getElementById('cancelUsageModalBtn'),
-      usageUpdateForm: document.getElementById('usageUpdateForm'),
-      usagePartIdInput: document.getElementById('usagePartIdInput'),
-      usageCurrentLocationSelect: document.getElementById('usageCurrentLocationSelect'),
-      usageToggleAddCurrentLocBtn: document.getElementById('usageToggleAddCurrentLocBtn'),
-      usageAddCurrentLocBox: document.getElementById('usageAddCurrentLocBox'),
-      usageNewCurrentLocInput: document.getElementById('usageNewCurrentLocInput'),
-      usageSaveNewCurrentLocBtn: document.getElementById('usageSaveNewCurrentLocBtn'),
-      usageLastLocationSelect: document.getElementById('usageLastLocationSelect'),
-      usageToggleAddLastLocBtn: document.getElementById('usageToggleAddLastLocBtn'),
-      usageAddLastLocBox: document.getElementById('usageAddLastLocBox'),
-      usageNewLastLocInput: document.getElementById('usageNewLastLocInput'),
-      usageSaveNewLastLocBtn: document.getElementById('usageSaveNewLastLocBtn'),
-      usageLastWoInput: document.getElementById('usageLastWoInput'),
-      usageLastAssetInput: document.getElementById('usageLastAssetInput'),
-      usageDeductOneCheckbox: document.getElementById('usageDeductOneCheckbox'),
-
-      pendingDot: document.getElementById('pendingDot'),
-      pendingSummaryText: document.getElementById('pendingSummaryText'),
-      revertLastSubmitBtn: document.getElementById('revertLastSubmitBtn'),
-      undoPendingBtn: document.getElementById('undoPendingBtn'),
-      submitPendingBtn: document.getElementById('submitPendingBtn'),
-
-      openTeamRoomBtn: document.getElementById('openTeamRoomBtn'),
-      lockTeamGateBtn: document.getElementById('lockTeamGateBtn'),
-      teamAccessModal: document.getElementById('teamAccessModal'),
-      gateTitle: document.getElementById('gateTitle'),
-      gateSubtitle: document.getElementById('gateSubtitle'),
-      tabSignInMode: document.getElementById('tabSignInMode'),
-      tabCreateAccountMode: document.getElementById('tabCreateAccountMode'),
-      teamAccessForm: document.getElementById('teamAccessForm'),
-      gateMemberNameInput: document.getElementById('gateMemberNameInput'),
-      gateEmailBox: document.getElementById('gateEmailBox'),
-      gateEmailInput: document.getElementById('gateEmailInput'),
-      accessCodeInput: document.getElementById('accessCodeInput'),
-      gateUserIdInput: document.getElementById('gateUserIdInput'),
-      gatePasscodeInput: document.getElementById('gatePasscodeInput'),
-      confirmPasscodeBox: document.getElementById('confirmPasscodeBox'),
-      gateConfirmPasscodeInput: document.getElementById('gateConfirmPasscodeInput'),
-      gateRoomPreview: document.getElementById('gateRoomPreview'),
-      gateSubmitBtn: document.getElementById('gateSubmitBtn'),
-      accessCodeError: document.getElementById('accessCodeError'),
-      openForgotPasscodeBtn: document.getElementById('openForgotPasscodeBtn'),
-      forgotPasscodeForm: document.getElementById('forgotPasscodeForm'),
-      backToSignInBtn: document.getElementById('backToSignInBtn'),
-      resetAccessCodeInput: document.getElementById('resetAccessCodeInput'),
-      resetUserIdInput: document.getElementById('resetUserIdInput'),
-      resetEmailInput: document.getElementById('resetEmailInput'),
-      sendResetOtpBtn: document.getElementById('sendResetOtpBtn'),
-      otpSentBadge: document.getElementById('otpSentBadge'),
-      resetOtpCodeInput: document.getElementById('resetOtpCodeInput'),
-      resetNewPasscodeInput: document.getElementById('resetNewPasscodeInput'),
-      resetPasscodeMsg: document.getElementById('resetPasscodeMsg'),
-
-      teamRoomModal: document.getElementById('teamRoomModal'),
-      closeTeamRoomModalBtn: document.getElementById('closeTeamRoomModalBtn'),
-      teamRoomForm: document.getElementById('teamRoomForm'),
-      memberNameInput: document.getElementById('memberNameInput'),
-      teamRoomCodeInput: document.getElementById('teamRoomCodeInput'),
-      copyTeamLinkBtn: document.getElementById('copyTeamLinkBtn'),
-
-      openActivityLogBtn: document.getElementById('openActivityLogBtn'),
-      activityLogModal: document.getElementById('activityLogModal'),
-      closeActivityLogModalBtn: document.getElementById('closeActivityLogModalBtn'),
-      activeSessionsList: document.getElementById('activeSessionsList'),
-      loginAuditLogsList: document.getElementById('loginAuditLogsList'),
-      modificationLogsList: document.getElementById('modificationLogsList'),
-
-      exportJsonBtn: document.getElementById('exportJsonBtn'),
-      exportCsvBtn: document.getElementById('exportCsvBtn'),
-      importBackupBtn: document.getElementById('importBackupBtn'),
-      importFileInput: document.getElementById('importFileInput'),
-
-      photoLightbox: document.getElementById('photoLightbox'),
-      lightboxImg: document.getElementById('lightboxImg'),
-      closeLightboxBtn: document.getElementById('closeLightboxBtn'),
-      toastBanner: document.getElementById('toastBanner'),
-    };
-
-    function escapeHtml(str) {
-      return String(str ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    }
-
-    function deepClone(obj) {
-      return JSON.parse(JSON.stringify(obj));
-    }
-
-    function normalizePart(raw) {
-      return {
-        id: raw.id || 'part-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
-        partNumber: String(raw.partNumber || '').trim().toUpperCase(),
-        name: String(raw.name || '').trim(),
-        category: raw.category === 'Existing Parts' ? 'Existing Parts' : 'New Parts',
-        qtyAvailable: Math.max(0, parseInt(raw.qtyAvailable, 10) || 0),
-        qtyUsed: Math.max(0, parseInt(raw.qtyUsed, 10) || 0),
-        alwaysStock: Boolean(raw.alwaysStock),
-        currentLocation: String(raw.currentLocation || 'Warehouse').trim(),
-        lastUsedLocation: String(raw.lastUsedLocation || 'CHN').trim(),
-        lastWoNumber: String(raw.lastWoNumber || '').trim().toUpperCase(),
-        lastAssetNumber: String(raw.lastAssetNumber || '').trim().toUpperCase(),
-        photoDataUrl: raw.photoDataUrl || null,
-        updatedBy: raw.updatedBy || currentMemberName,
-        updatedAt: raw.updatedAt || Date.now(),
+      let state = {
+        roomCode: initialRoom,
+        memberName: localStorage.getItem("ps_member_name") || "Tech",
+        userId: localStorage.getItem("ps_user_id") || "",
+        email: localStorage.getItem("ps_user_email") || "",
+        parts: [],
+        currentLocations: [...DEFAULT_CURRENT_LOCATIONS],
+        lastLocations: [...DEFAULT_LAST_LOCATIONS],
+        modificationLogs: [],
+        loginAuditLogs: [],
+        teamUsers: [],
+        teamSessions: [],
+        searchQuery: "",
+        activeFilter: "all",
+        pendingChangesCount: 0,
+        stagedLogs: [],
+        undoStack: [],
+        lastSubmittedSnapshot: null,
+        draftPhotoDataUrl: "",
+        activeResetOtp: null
       };
-    }
 
-    function getStorageKey() {
-      return `partsearch_room_${currentTeamRoom}`;
-    }
-
-    function updateCloudSyncBadge(label) {
-      if (dom.syncStatusText) {
-        dom.syncStatusText.textContent = label;
+      function showToast(msg, duration = 3200) {
+        const el = document.getElementById("toastBanner");
+        el.textContent = msg;
+        el.classList.remove("hidden");
+        clearTimeout(el._timer);
+        el._timer = setTimeout(() => el.classList.add("hidden"), duration);
       }
-    }
 
-    function subscribeToCloudRoom() {
-      if (!firestoreDb) {
-        updateCloudSyncBadge('Local Only');
-        return;
+      function generateId(prefix) {
+        return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       }
-      if (typeof unsubscribeRoomSnapshot === 'function') {
-        unsubscribeRoomSnapshot();
+
+      function escapeHtml(str) {
+        return String(str || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
       }
-      updateCloudSyncBadge('Connecting Cloud...');
-      const docRef = firestoreDb.collection('partsearch_rooms').doc(currentTeamRoom);
 
-      unsubscribeRoomSnapshot = docRef.onSnapshot(
-        (docSnap) => {
-          isRemoteSyncReady = true;
-          updateCloudSyncBadge('Cloud Live');
-
-          if (docSnap.exists) {
-            const data = docSnap.data() || {};
-            if (Array.isArray(data.parts)) {
-              committedParts = data.parts.map(normalizePart);
-              if (undoStack.length === 0) {
-                pendingParts = deepClone(committedParts);
-              }
-            }
-            if (Array.isArray(data.currentLocations) && data.currentLocations.length) {
-              currentLocations = data.currentLocations;
-            }
-            if (Array.isArray(data.lastLocations) && data.lastLocations.length) {
-              lastLocations = data.lastLocations;
-            }
-            if (Array.isArray(data.modificationLogs)) {
-              modificationLogs = data.modificationLogs;
-            }
-            if (Array.isArray(data.loginAuditLogs)) {
-              loginAuditLogs = data.loginAuditLogs;
-            }
-            if (Array.isArray(data.teamSessions)) {
-              teamSessions = data.teamSessions;
-            }
-            if (data.teamUsers && typeof data.teamUsers === 'object') {
-              cloudTeamUsers = data.teamUsers;
-              localStorage.setItem(`ps_team_users_${currentTeamRoom}`, JSON.stringify(cloudTeamUsers));
-            }
-            saveLocalOnly();
-            renderParts();
-            updatePendingBar();
-          } else {
-            saveLocalState();
-          }
-        },
-        (err) => {
-          console.warn('Firestore snapshot error:', err);
-          updateCloudSyncBadge('Cloud Offline');
-        }
-      );
-    }
-
-    function loadLocalState() {
-      try {
-        cloudTeamUsers = JSON.parse(localStorage.getItem(`ps_team_users_${currentTeamRoom}`) || '{}');
-      } catch (e) {
-        cloudTeamUsers = {};
-      }
-      try {
-        const saved = JSON.parse(localStorage.getItem(getStorageKey()) || 'null');
-        if (saved && Array.isArray(saved.parts)) {
-          committedParts = saved.parts.map(normalizePart);
-          currentLocations = Array.isArray(saved.currentLocations) && saved.currentLocations.length ? saved.currentLocations : [...DEFAULT_CURRENT_LOCATIONS];
-          lastLocations = Array.isArray(saved.lastLocations) && saved.lastLocations.length ? saved.lastLocations : [...DEFAULT_LAST_LOCATIONS];
-          modificationLogs = Array.isArray(saved.modificationLogs) ? saved.modificationLogs : [];
-          loginAuditLogs = Array.isArray(saved.loginAuditLogs) ? saved.loginAuditLogs : [];
-          teamSessions = Array.isArray(saved.teamSessions) ? saved.teamSessions : [];
+      // ============================================================
+      // 3. FIRESTORE REAL-TIME SYNC
+      // ============================================================
+      function setSyncStatus(label, isLive) {
+        const textEl = document.getElementById("syncStatusText");
+        const pillEl = document.getElementById("syncStatusPill");
+        textEl.textContent = label;
+        if (isLive) {
+          pillEl.className = "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30";
         } else {
-          committedParts = SAMPLE_PARTS.map(normalizePart);
-          currentLocations = [...DEFAULT_CURRENT_LOCATIONS];
-          lastLocations = [...DEFAULT_LAST_LOCATIONS];
-          modificationLogs = [];
-          loginAuditLogs = [];
-          teamSessions = [];
+          pillEl.className = "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30";
         }
-      } catch (err) {
-        committedParts = SAMPLE_PARTS.map(normalizePart);
       }
-      pendingParts = deepClone(committedParts);
-      undoStack = [];
-      pendingLogs = [];
-      upsertCurrentSession();
-      saveLocalOnly();
-      subscribeToCloudRoom();
-    }
 
-    function saveLocalOnly() {
-      try {
-        localStorage.setItem(
-          getStorageKey(),
-          JSON.stringify({
-            parts: committedParts,
-            currentLocations,
-            lastLocations,
-            modificationLogs,
-            loginAuditLogs,
-            teamSessions,
-            updatedAt: Date.now(),
-          })
-        );
-      } catch (err) {
-        console.warn('Storage save warning:', err);
-      }
-    }
-
-    function saveLocalState() {
-      saveLocalOnly();
-      if (firestoreDb) {
-        firestoreDb
-          .collection('partsearch_rooms')
-          .doc(currentTeamRoom)
-          .set(
-            {
-              parts: committedParts,
-              currentLocations,
-              lastLocations,
-              modificationLogs,
-              loginAuditLogs,
-              teamSessions,
-              teamUsers: cloudTeamUsers,
-              updatedAt: Date.now(),
-            },
-            { merge: true }
-          )
-          .catch((err) => {
-            console.warn('Firestore write warning:', err);
-            updateCloudSyncBadge('Check Firestore Rules');
-          });
-      }
-    }
-
-    function recordLoginAudit(eventType, details, actorName = currentMemberName, actorEmail = currentUserEmail, actorUserId = currentUserId) {
-      loginAuditLogs.unshift({
-        id: 'audit-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5),
-        eventType,
-        memberName: actorName || 'Unknown',
-        email: actorEmail || '—',
-        userId: actorUserId || '—',
-        details: details || '',
-        timestamp: Date.now(),
-      });
-      loginAuditLogs = loginAuditLogs.slice(0, 150);
-    }
-
-    function upsertCurrentSession() {
-      const now = Date.now();
-      const idx = teamSessions.findIndex((s) => s.sessionId === currentSessionId);
-      const record = {
-        sessionId: currentSessionId,
-        memberName: currentMemberName,
-        email: currentUserEmail,
-        enteredAt: sessionEnteredAt,
-        lastActiveAt: now,
-      };
-      if (idx !== -1) {
-        teamSessions[idx] = record;
-      } else {
-        teamSessions.unshift(record);
-      }
-      teamSessions = teamSessions.slice(0, 25);
-    }
-
-    function formatDuration(ms) {
-      const totalSec = Math.max(0, Math.floor(ms / 1000));
-      const mins = Math.floor(totalSec / 60);
-      const secs = totalSec % 60;
-      if (mins >= 60) {
-        const hrs = Math.floor(mins / 60);
-        return `${hrs}h ${mins % 60}m`;
-      }
-      return `${mins}m ${secs}s`;
-    }
-
-    function formatTime(ts) {
-      if (!ts) return '—';
-      return new Date(ts).toLocaleString([], {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    }
-
-    let toastTimer = null;
-    function showToast(msg) {
-      if (!dom.toastBanner) return;
-      dom.toastBanner.textContent = msg;
-      dom.toastBanner.classList.remove('hidden');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => dom.toastBanner.classList.add('hidden'), 3000);
-    }
-
-    function bind(el, eventName, handler) {
-      if (el && typeof el.addEventListener === 'function') {
-        el.addEventListener(eventName, handler);
-      }
-    }
-
-    function bindEvents() {
-      // Search & Filter Tabs
-      bind(dom.searchInput, 'input', (e) => {
-        activeSearchQuery = e.target.value;
-        dom.clearSearchBtn?.classList.toggle('hidden', activeSearchQuery.length === 0);
-        renderParts();
-      });
-
-      bind(dom.clearSearchBtn, 'click', () => {
-        activeSearchQuery = '';
-        if (dom.searchInput) dom.searchInput.value = '';
-        dom.clearSearchBtn?.classList.add('hidden');
-        renderParts();
-      });
-
-      dom.filterTabs?.forEach((btn) => {
-        bind(btn, 'click', () => {
-          activeFilter = btn.dataset.filter || 'all';
-          dom.filterTabs.forEach((b) => b.classList.remove('tab-active'));
-          btn.classList.add('tab-active');
-          renderParts();
-        });
-      });
-
-      // Add Part Modal
-      bind(dom.openAddModalBtn, 'click', () => openAddPartModal(null));
-      bind(dom.closeAddModalBtn, 'click', closeAddPartModal);
-      bind(dom.cancelAddModalBtn, 'click', closeAddPartModal);
-      bind(dom.addPartForm, 'submit', handleAddPartSubmit);
-      bind(dom.qtyAvailableInput, 'input', updateNetStockPreview);
-      bind(dom.qtyUsedInput, 'input', updateNetStockPreview);
-
-      // Photo & OCR handlers
-      bind(dom.triggerPhotoBtn, 'click', () => dom.partPhotoInput?.click());
-      bind(dom.partPhotoInput, 'change', (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (file) handlePhotoFileSelected(file);
-      });
-      bind(dom.removeDraftPhotoBtn, 'click', () => {
-        draftPartPhoto = null;
-        if (dom.partPhotoInput) dom.partPhotoInput.value = '';
-        dom.draftPhotoPreviewBox?.classList.add('hidden');
-        dom.ocrStatusBox?.classList.add('hidden');
-        if (dom.ocrChipsContainer) dom.ocrChipsContainer.innerHTML = '';
-      });
-      bind(dom.runOcrBtn, 'click', runOcrOnDraftPhoto);
-
-      // Inline Add Custom Current Location
-      bind(dom.toggleAddCurrentLocBtn, 'click', () => {
-        dom.addCurrentLocBox?.classList.toggle('hidden');
-        if (!dom.addCurrentLocBox?.classList.contains('hidden')) {
-          dom.newCurrentLocInput?.focus();
-        }
-      });
-      bind(dom.saveNewCurrentLocBtn, 'click', () => {
-        const val = dom.newCurrentLocInput?.value.trim();
-        if (!val) return;
-        if (!currentLocations.some((l) => l.toLowerCase() === val.toLowerCase())) {
-          currentLocations.push(val);
-          saveLocalState();
-        }
-        populateLocationSelects(val, dom.lastUsedLocationSelect?.value || 'CHN');
-        if (dom.newCurrentLocInput) dom.newCurrentLocInput.value = '';
-        dom.addCurrentLocBox?.classList.add('hidden');
-        showToast(`Added "${val}" to Current Location list`);
-      });
-
-      // Inline Add Custom Last Used Location
-      bind(dom.toggleAddLastLocBtn, 'click', () => {
-        dom.addLastLocBox?.classList.toggle('hidden');
-        if (!dom.addLastLocBox?.classList.contains('hidden')) {
-          dom.newLastLocInput?.focus();
-        }
-      });
-      bind(dom.saveNewLastLocBtn, 'click', () => {
-        const val = dom.newLastLocInput?.value.trim();
-        if (!val) return;
-        if (!lastLocations.some((l) => l.toLowerCase() === val.toLowerCase())) {
-          lastLocations.push(val);
-          saveLocalState();
-        }
-        populateLocationSelects(dom.currentLocationSelect?.value || 'Warehouse', val);
-        if (dom.newLastLocInput) dom.newLastLocInput.value = '';
-        dom.addLastLocBox?.classList.add('hidden');
-        showToast(`Added "${val}" to Last Used Location list`);
-      });
-
-      // Quick Update Usage & Location Modal
-      bind(dom.closeUsageModalBtn, 'click', closeUsageModal);
-      bind(dom.cancelUsageModalBtn, 'click', closeUsageModal);
-      bind(dom.usageUpdateForm, 'submit', handleUsageUpdateSubmit);
-
-      bind(dom.usageToggleAddCurrentLocBtn, 'click', () => {
-        dom.usageAddCurrentLocBox?.classList.toggle('hidden');
-        if (!dom.usageAddCurrentLocBox?.classList.contains('hidden')) {
-          dom.usageNewCurrentLocInput?.focus();
-        }
-      });
-      bind(dom.usageSaveNewCurrentLocBtn, 'click', () => {
-        const val = dom.usageNewCurrentLocInput?.value.trim();
-        if (!val) return;
-        if (!currentLocations.some((l) => l.toLowerCase() === val.toLowerCase())) {
-          currentLocations.push(val);
-          saveLocalState();
-        }
-        populateLocationSelects(val, dom.usageLastLocationSelect?.value || 'CHN');
-        if (dom.usageNewCurrentLocInput) dom.usageNewCurrentLocInput.value = '';
-        dom.usageAddCurrentLocBox?.classList.add('hidden');
-        showToast(`Added "${val}" to Current Location list`);
-      });
-
-      bind(dom.usageToggleAddLastLocBtn, 'click', () => {
-        dom.usageAddLastLocBox?.classList.toggle('hidden');
-        if (!dom.usageAddLastLocBox?.classList.contains('hidden')) {
-          dom.usageNewLastLocInput?.focus();
-        }
-      });
-      bind(dom.usageSaveNewLastLocBtn, 'click', () => {
-        const val = dom.usageNewLastLocInput?.value.trim();
-        if (!val) return;
-        if (!lastLocations.some((l) => l.toLowerCase() === val.toLowerCase())) {
-          lastLocations.push(val);
-          saveLocalState();
-        }
-        populateLocationSelects(dom.usageCurrentLocationSelect?.value || 'Warehouse', val);
-        if (dom.usageNewLastLocInput) dom.usageNewLastLocInput.value = '';
-        dom.usageAddLastLocBox?.classList.add('hidden');
-        showToast(`Added "${val}" to Last Used Location list`);
-      });
-
-      // Undo / Submit Workflow
-      bind(dom.undoPendingBtn, 'click', undoPendingChange);
-      bind(dom.submitPendingBtn, 'click', submitPendingChanges);
-      bind(dom.revertLastSubmitBtn, 'click', revertLastSubmit);
-
-      // Team Room, Access Gate & Activity Log Modals
-      bind(dom.openTeamRoomBtn, 'click', openTeamRoomModal);
-      bind(dom.closeTeamRoomModalBtn, 'click', closeTeamRoomModal);
-      bind(dom.teamRoomForm, 'submit', handleTeamRoomSubmit);
-      bind(dom.copyTeamLinkBtn, 'click', copyTeamShareLink);
-
-      bind(dom.lockTeamGateBtn, 'click', () => {
-        recordLoginAudit('LOCKED', 'Locked team access gate');
-        saveLocalState();
-        localStorage.removeItem('ps_team_unlocked');
-        openTeamAccessGate('signin');
-      });
-      bind(dom.tabSignInMode, 'click', () => setGateMode('signin'));
-      bind(dom.tabCreateAccountMode, 'click', () => setGateMode('register'));
-      bind(dom.openForgotPasscodeBtn, 'click', () => {
-        activeResetOtp = null;
-        dom.otpSentBadge?.classList.add('hidden');
-        dom.teamAccessForm?.classList.add('hidden');
-        dom.forgotPasscodeForm?.classList.remove('hidden');
-        if (dom.resetAccessCodeInput) dom.resetAccessCodeInput.value = '';
-        if (dom.resetUserIdInput) dom.resetUserIdInput.value = dom.gateUserIdInput?.value || currentUserId || '';
-        const users = getTeamUsersStore();
-        const savedEmail = (dom.gateEmailInput?.value || '').trim().toLowerCase() || users[(dom.resetUserIdInput?.value || '').trim().toLowerCase()]?.email || currentUserEmail || '';
-        if (dom.resetEmailInput) dom.resetEmailInput.value = savedEmail;
-        if (dom.resetOtpCodeInput) dom.resetOtpCodeInput.value = '';
-        if (dom.resetNewPasscodeInput) dom.resetNewPasscodeInput.value = '';
-        dom.resetPasscodeMsg?.classList.add('hidden');
-      });
-      bind(dom.backToSignInBtn, 'click', () => {
-        activeResetOtp = null;
-        dom.forgotPasscodeForm?.classList.add('hidden');
-        dom.teamAccessForm?.classList.remove('hidden');
-        dom.resetPasscodeMsg?.classList.add('hidden');
-      });
-      bind(dom.sendResetOtpBtn, 'click', handleSendResetOtp);
-      bind(dom.forgotPasscodeForm, 'submit', handleForgotPasscodeReset);
-      bind(dom.teamAccessForm, 'submit', handleTeamAccessSubmit);
-      bind(dom.openActivityLogBtn, 'click', openActivityLogModal);
-      bind(dom.closeActivityLogModalBtn, 'click', closeActivityLogModal);
-
-      // Backup Export / Import
-      bind(dom.exportJsonBtn, 'click', exportJsonBackup);
-      bind(dom.exportCsvBtn, 'click', exportCsvBackup);
-      bind(dom.importBackupBtn, 'click', () => dom.importFileInput?.click());
-      bind(dom.importFileInput, 'change', (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (file) importBackupFile(file);
-        e.target.value = '';
-      });
-
-      // Photo Lightbox
-      bind(dom.closeLightboxBtn, 'click', () => dom.photoLightbox?.classList.add('hidden'));
-      bind(dom.photoLightbox, 'click', (e) => {
-        if (e.target === dom.photoLightbox) dom.photoLightbox.classList.add('hidden');
-      });
-    }
-
-    function populateLocationSelects(selectedCurrent = 'Warehouse', selectedLast = 'CHN') {
-      const renderOptions = (list, selectedVal) =>
-        list
-          .map((loc) => {
-            const isSelected = loc.toLowerCase() === String(selectedVal || '').toLowerCase();
-            return `<option value="${escapeHtml(loc)}" ${isSelected ? 'selected' : ''}>${escapeHtml(loc)}</option>`;
-          })
-          .join('');
-
-      if (dom.currentLocationSelect) dom.currentLocationSelect.innerHTML = renderOptions(currentLocations, selectedCurrent);
-      if (dom.lastUsedLocationSelect) dom.lastUsedLocationSelect.innerHTML = renderOptions(lastLocations, selectedLast);
-      if (dom.usageCurrentLocationSelect) dom.usageCurrentLocationSelect.innerHTML = renderOptions(currentLocations, selectedCurrent);
-      if (dom.usageLastLocationSelect) dom.usageLastLocationSelect.innerHTML = renderOptions(lastLocations, selectedLast);
-    }
-
-    function updateNetStockPreview() {
-      const isEditing = Boolean(dom.editingPartIdInput?.value);
-      const rawAvail = Math.max(0, parseInt(dom.qtyAvailableInput?.value, 10) || 0);
-      const rawUsed = Math.max(0, parseInt(dom.qtyUsedInput?.value, 10) || 0);
-      const left = isEditing ? rawAvail : Math.max(0, rawAvail - rawUsed);
-      if (dom.netStockPreviewText) {
-        dom.netStockPreviewText.textContent = `${left} ${left === 1 ? 'part' : 'parts'} left`;
-        dom.netStockPreviewText.className = left === 0 ? 'font-extrabold text-rose-400' : 'font-extrabold text-emerald-300';
-      }
-    }
-
-    function openAddPartModal(existingPart = null) {
-      dom.addPartForm.reset();
-      dom.addCurrentLocBox.classList.add('hidden');
-      dom.addLastLocBox.classList.add('hidden');
-      dom.ocrStatusBox.classList.add('hidden');
-      dom.ocrChipsContainer.innerHTML = '';
-
-      if (existingPart) {
-        dom.addPartModalTitle.textContent = `Edit ${existingPart.partNumber}`;
-        dom.qtyAvailableLabel.textContent = 'Number of Parts Left (Available)';
-        dom.editingPartIdInput.value = existingPart.id;
-        dom.partNumberInput.value = existingPart.partNumber;
-        dom.partCategorySelect.value = existingPart.category;
-        dom.partNameInput.value = existingPart.name;
-        dom.qtyAvailableInput.value = String(existingPart.qtyAvailable);
-        dom.qtyUsedInput.value = String(existingPart.qtyUsed || 0);
-        dom.alwaysStockCheckbox.checked = Boolean(existingPart.alwaysStock);
-        populateLocationSelects(existingPart.currentLocation, existingPart.lastUsedLocation);
-        dom.lastWoInput.value = existingPart.lastWoNumber || '';
-        dom.lastAssetInput.value = existingPart.lastAssetNumber || '';
-        draftPartPhoto = existingPart.photoDataUrl || null;
-      } else {
-        dom.addPartModalTitle.textContent = 'Add Part to Search Catalog';
-        dom.qtyAvailableLabel.textContent = 'Total Quantity Received / Available';
-        dom.editingPartIdInput.value = '';
-        dom.partCategorySelect.value = 'New Parts';
-        dom.qtyAvailableInput.value = '1';
-        dom.qtyUsedInput.value = '0';
-        dom.alwaysStockCheckbox.checked = false;
-        populateLocationSelects(currentLocations[0] || 'Warehouse', lastLocations[0] || 'CHN');
-        draftPartPhoto = null;
-      }
-      updateNetStockPreview();
-
-      if (draftPartPhoto) {
-        dom.draftPhotoImg.src = draftPartPhoto;
-        dom.draftPhotoPreviewBox.classList.remove('hidden');
-      } else {
-        dom.draftPhotoPreviewBox.classList.add('hidden');
-      }
-      dom.addPartModal.classList.remove('hidden');
-    }
-
-    function closeAddPartModal() {
-      dom.addPartModal.classList.add('hidden');
-    }
-
-    function handlePhotoFileSelected(file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        draftPartPhoto = ev.target.result;
-        dom.draftPhotoImg.src = draftPartPhoto;
-        dom.draftPhotoPreviewBox.classList.remove('hidden');
-        runOcrOnDraftPhoto();
-      };
-      reader.readAsDataURL(file);
-    }
-
-    async function runOcrOnDraftPhoto() {
-      if (!draftPartPhoto) {
-        showToast('Upload or snap a photo first to scan text.');
-        return;
-      }
-      if (typeof Tesseract === 'undefined') {
-        showToast('OCR library still loading — enter Part Number manually.');
-        return;
-      }
-      dom.ocrStatusBox.classList.remove('hidden');
-      dom.ocrStatusText.textContent = 'Scanning label for part numbers...';
-      dom.ocrChipsContainer.innerHTML = '';
-
-      try {
-        const result = await Tesseract.recognize(draftPartPhoto, 'eng');
-        const text = (result && result.data && result.data.text) || '';
-        const tokens = Array.from(
-          new Set(
-            text
-              .split(/\s+/)
-              .map((t) => t.replace(/[^A-Za-z0-9\-_/]/g, '').toUpperCase())
-              .filter((t) => t.length >= 3 && /\d/.test(t))
-          )
-        ).slice(0, 8);
-
-        if (tokens.length === 0) {
-          dom.ocrStatusText.textContent = 'No alphanumeric part codes detected — type manually.';
+      function connectRoomListener() {
+        if (!db) {
+          setSyncStatus("Local Mode", false);
           return;
         }
-        dom.ocrStatusText.textContent = 'Tap a scanned code to fill Part Number:';
-        tokens.forEach((code) => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'px-2.5 py-1 rounded-lg bg-indigo-600/25 hover:bg-indigo-600/40 border border-indigo-500/40 text-xs font-bold text-indigo-200';
-          btn.textContent = code;
-          btn.onclick = () => {
-            dom.partNumberInput.value = code;
-            showToast(`Filled Part Number: ${code}`);
-          };
-          dom.ocrChipsContainer.appendChild(btn);
+        if (unsubscribeRoom) unsubscribeRoom();
+
+        const roomRef = db.collection("partsearch_rooms").doc(state.roomCode);
+        unsubscribeRoom = roomRef.onSnapshot(
+          (docSnap) => {
+            setSyncStatus("Cloud Live", true);
+            if (!docSnap.exists) {
+              roomRef.set({
+                parts: state.parts,
+                currentLocations: state.currentLocations,
+                lastLocations: state.lastLocations,
+                modificationLogs: state.modificationLogs,
+                loginAuditLogs: state.loginAuditLogs,
+                teamUsers: state.teamUsers,
+                teamSessions: state.teamSessions
+              }, { merge: true }).catch(() => {});
+              return;
+            }
+            const data = docSnap.data() || {};
+            if (Array.isArray(data.teamUsers)) state.teamUsers = data.teamUsers;
+            if (Array.isArray(data.loginAuditLogs)) state.loginAuditLogs = data.loginAuditLogs;
+            if (Array.isArray(data.teamSessions)) state.teamSessions = data.teamSessions;
+
+            // Only overwrite parts if user has no unsubmitted staged edits
+            if (state.pendingChangesCount === 0) {
+              if (Array.isArray(data.parts)) state.parts = data.parts;
+              if (Array.isArray(data.currentLocations) && data.currentLocations.length) {
+                state.currentLocations = data.currentLocations;
+              }
+              if (Array.isArray(data.lastLocations) && data.lastLocations.length) {
+                state.lastLocations = data.lastLocations;
+              }
+              if (Array.isArray(data.modificationLogs)) {
+                state.modificationLogs = data.modificationLogs;
+              }
+              renderAll();
+            }
+          },
+          (err) => {
+            console.warn("Firestore snapshot error:", err);
+            setSyncStatus("Sync Retry", false);
+          }
+        );
+      }
+
+      async function saveRoomToCloud(extraFields = {}) {
+        if (!db) return;
+        const roomRef = db.collection("partsearch_rooms").doc(state.roomCode);
+        await roomRef.set({
+          parts: state.parts,
+          currentLocations: state.currentLocations,
+          lastLocations: state.lastLocations,
+          modificationLogs: state.modificationLogs.slice(0, 150),
+          loginAuditLogs: state.loginAuditLogs.slice(0, 100),
+          teamUsers: state.teamUsers,
+          teamSessions: state.teamSessions.slice(0, 50),
+          updatedAt: Date.now(),
+          ...extraFields
+        }, { merge: true });
+      }
+
+      function recordLoginAudit(eventType, details, memberName, email, userId) {
+        state.loginAuditLogs.unshift({
+          id: generateId("audit"),
+          eventType,
+          details,
+          memberName: memberName || state.memberName,
+          email: email || state.email,
+          userId: userId || state.userId,
+          timestamp: Date.now()
         });
-      } catch (err) {
-        dom.ocrStatusText.textContent = 'OCR scan unavailable — enter Part Number manually.';
-      }
-    }
-
-    function stageMutation(mutatorFn, logText, partNumber) {
-      undoStack.push({
-        parts: deepClone(pendingParts),
-        logs: deepClone(pendingLogs),
-      });
-      mutatorFn(pendingParts);
-      pendingLogs.unshift({
-        id: 'log-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5),
-        memberName: currentMemberName,
-        partNumber: partNumber || 'CATALOG',
-        action: logText,
-        timestamp: Date.now(),
-      });
-      renderParts();
-      updatePendingBar();
-    }
-
-    function handleAddPartSubmit(e) {
-      e.preventDefault();
-      const partNumber = dom.partNumberInput.value.trim().toUpperCase();
-      if (!partNumber) {
-        showToast('Please enter a Part Number.');
-        return;
+        saveRoomToCloud().catch(() => {});
       }
 
-      const isEditing = Boolean(dom.editingPartIdInput.value);
-      const rawQtyAvailable = Math.max(0, parseInt(dom.qtyAvailableInput.value, 10) || 0);
-      const rawQtyUsed = Math.max(0, parseInt(dom.qtyUsedInput.value, 10) || 0);
-      const calculatedLeft = isEditing ? rawQtyAvailable : Math.max(0, rawQtyAvailable - rawQtyUsed);
+      // ============================================================
+      // 4. TEAM ACCESS GATE & REAL INBOX EMAIL OTP RESET
+      // ============================================================
+      let isCreateAccountMode = false;
 
-      const payload = normalizePart({
-        id: dom.editingPartIdInput.value || undefined,
-        partNumber,
-        name: dom.partNameInput.value.trim(),
-        category: dom.partCategorySelect.value,
-        qtyAvailable: calculatedLeft,
-        qtyUsed: rawQtyUsed,
-        alwaysStock: dom.alwaysStockCheckbox.checked,
-        currentLocation: dom.currentLocationSelect.value || 'Warehouse',
-        lastUsedLocation: dom.lastUsedLocationSelect.value || 'CHN',
-        lastWoNumber: dom.lastWoInput.value.trim().toUpperCase(),
-        lastAssetNumber: dom.lastAssetInput.value.trim().toUpperCase(),
-        photoDataUrl: draftPartPhoto,
-        updatedBy: currentMemberName,
-        updatedAt: Date.now(),
-      });
+      function openTeamAccessGate() {
+        document.getElementById("gateRoomPreview").textContent = state.roomCode;
+        document.getElementById("gateMemberNameInput").value = localStorage.getItem("ps_member_name") || "";
+        document.getElementById("gateEmailInput").value = localStorage.getItem("ps_user_email") || "";
+        document.getElementById("gateUserIdInput").value = localStorage.getItem("ps_user_id") || "";
+        document.getElementById("teamAccessModal").classList.remove("hidden");
+      }
 
-      const existingIdx = pendingParts.findIndex((p) => p.id === payload.id);
-      const logText =
-        existingIdx !== -1
-          ? `Edited part (Left: ${payload.qtyAvailable}, Used: ${payload.qtyUsed}, Loc: ${payload.currentLocation})`
-          : `Added part (Received: ${rawQtyAvailable}, Used: ${payload.qtyUsed} → ${payload.qtyAvailable} left, Loc: ${payload.currentLocation})`;
+      function setGateMode(createMode) {
+        isCreateAccountMode = createMode;
+        const tabSignIn = document.getElementById("tabSignInMode");
+        const tabCreate = document.getElementById("tabCreateAccountMode");
+        const confirmBox = document.getElementById("confirmPasscodeBox");
+        const submitBtn = document.getElementById("gateSubmitBtn");
+        const errEl = document.getElementById("accessCodeError");
+        errEl.classList.add("hidden");
 
-      stageMutation(
-        (arr) => {
+        if (createMode) {
+          tabCreate.className = "py-2 rounded-lg text-xs font-bold bg-indigo-600 text-white transition";
+          tabSignIn.className = "py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition";
+          confirmBox.classList.remove("hidden");
+          submitBtn.textContent = "Create ID & Unlock";
+        } else {
+          tabSignIn.className = "py-2 rounded-lg text-xs font-bold bg-indigo-600 text-white transition";
+          tabCreate.className = "py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition";
+          confirmBox.classList.add("hidden");
+          submitBtn.textContent = "Unlock & Sign In";
+        }
+      }
+
+      document.getElementById("tabSignInMode").addEventListener("click", () => setGateMode(false));
+      document.getElementById("tabCreateAccountMode").addEventListener("click", () => setGateMode(true));
+
+      document.getElementById("teamAccessForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const errEl = document.getElementById("accessCodeError");
+        errEl.classList.add("hidden");
+
+        const name = document.getElementById("gateMemberNameInput").value.trim();
+        const email = document.getElementById("gateEmailInput").value.trim().toLowerCase();
+        const code = document.getElementById("accessCodeInput").value.trim().toUpperCase();
+        const userId = document.getElementById("gateUserIdInput").value.trim().toLowerCase();
+        const passcode = document.getElementById("gatePasscodeInput").value.trim();
+        const confirmPasscode = document.getElementById("gateConfirmPasscodeInput").value.trim();
+
+        if (code !== TEAM_ACCESS_CODE) {
+          errEl.textContent = "Invalid Team Access Code.";
+          errEl.classList.remove("hidden");
+          return;
+        }
+        if (passcode.length < 4) {
+          errEl.textContent = "Passcode must be at least 4 characters.";
+          errEl.classList.remove("hidden");
+          return;
+        }
+
+        // Refresh latest teamUsers from Firestore before verifying
+        if (db) {
+          try {
+            const snap = await db.collection("partsearch_rooms").doc(state.roomCode).get();
+            if (snap.exists && Array.isArray(snap.data().teamUsers)) {
+              state.teamUsers = snap.data().teamUsers;
+            }
+          } catch (_) {}
+        }
+
+        const existingIdx = state.teamUsers.findIndex(
+          (u) => (u.userId || "").toLowerCase() === userId || (u.email || "").toLowerCase() === email
+        );
+
+        if (isCreateAccountMode) {
+          if (passcode !== confirmPasscode) {
+            errEl.textContent = "Passcodes do not match.";
+            errEl.classList.remove("hidden");
+            return;
+          }
           if (existingIdx !== -1) {
-            arr[existingIdx] = payload;
+            errEl.textContent = "User ID or Email already exists. Switch to Sign In or use Forgot Passcode.";
+            errEl.classList.remove("hidden");
+            return;
+          }
+          state.teamUsers.push({
+            userId,
+            email,
+            memberName: name,
+            passcode,
+            createdAt: Date.now()
+          });
+          recordLoginAudit("SIGN_UP_LOGIN", `Registered & logged in with email ${email}`, name, email, userId);
+        } else {
+          if (existingIdx === -1) {
+            // Auto-register first-time user if no account exists yet
+            state.teamUsers.push({
+              userId,
+              email,
+              memberName: name,
+              passcode,
+              createdAt: Date.now()
+            });
+            recordLoginAudit("SIGN_UP_LOGIN", `Registered & logged in with email ${email}`, name, email, userId);
           } else {
-            arr.unshift(payload);
+            const userRecord = state.teamUsers[existingIdx];
+            if (userRecord.passcode !== passcode) {
+              errEl.textContent = "Incorrect passcode for this User ID. Click 'Forgot Passcode? (Email OTP)' to reset.";
+              errEl.classList.remove("hidden");
+              return;
+            }
+            if ((userRecord.email || "").toLowerCase() !== email) {
+              errEl.textContent = "Email does not match the registered email for this User ID.";
+              errEl.classList.remove("hidden");
+              return;
+            }
+            userRecord.memberName = name || userRecord.memberName;
+            recordLoginAudit("SIGN_IN", `Signed in with email ${email}`, name, email, userId);
           }
-        },
-        logText,
-        payload.partNumber
-      );
-
-      closeAddPartModal();
-      showToast(`Saved ${payload.partNumber}: ${payload.qtyAvailable} left (pending Submit)`);
-    }
-
-    function adjustPartStock(partId, delta) {
-      const target = pendingParts.find((p) => p.id === partId);
-      if (!target) return;
-      if (delta < 0 && target.qtyAvailable <= 0) {
-        showToast(`${target.partNumber} is already at 0 available.`);
-        return;
-      }
-      stageMutation(
-        (arr) => {
-          const item = arr.find((p) => p.id === partId);
-          if (!item) return;
-          if (delta < 0) {
-            item.qtyAvailable = Math.max(0, item.qtyAvailable - 1);
-            item.qtyUsed = (item.qtyUsed || 0) + 1;
-          } else {
-            item.qtyAvailable += 1;
-          }
-          item.updatedBy = currentMemberName;
-          item.updatedAt = Date.now();
-        },
-        delta < 0 ? 'Used 1 unit (-1 left, +1 used)' : 'Restocked +1 unit',
-        target.partNumber
-      );
-      showToast(delta < 0 ? `-1 used on ${target.partNumber}` : `+1 restocked on ${target.partNumber}`);
-    }
-
-    function markPartZero(partId) {
-      const target = pendingParts.find((p) => p.id === partId);
-      if (!target) return;
-      const prevAvail = target.qtyAvailable;
-      stageMutation(
-        (arr) => {
-          const item = arr.find((p) => p.id === partId);
-          if (!item) return;
-          item.qtyUsed = (item.qtyUsed || 0) + item.qtyAvailable;
-          item.qtyAvailable = 0;
-          item.updatedBy = currentMemberName;
-          item.updatedAt = Date.now();
-        },
-        `Marked 0 available (moved ${prevAvail} to Parts Used)`,
-        target.partNumber
-      );
-      showToast(`${target.partNumber} marked 0 available`);
-    }
-
-    function deletePartEntry(partId) {
-      const target = pendingParts.find((p) => p.id === partId);
-      if (!target) return;
-      stageMutation(
-        (arr) => {
-          const idx = arr.findIndex((p) => p.id === partId);
-          if (idx !== -1) arr.splice(idx, 1);
-        },
-        'Deleted part from catalog',
-        target.partNumber
-      );
-      showToast(`Removed ${target.partNumber} (click Undo to restore)`);
-    }
-
-    function openUsageModal(partId) {
-      const part = pendingParts.find((p) => p.id === partId);
-      if (!part) return;
-      dom.usagePartIdInput.value = part.id;
-      dom.usageModalTitle.textContent = `Update ${part.partNumber} Location & WO`;
-      dom.usageAddCurrentLocBox.classList.add('hidden');
-      dom.usageAddLastLocBox.classList.add('hidden');
-      populateLocationSelects(part.currentLocation, part.lastUsedLocation);
-      dom.usageLastWoInput.value = part.lastWoNumber || '';
-      dom.usageLastAssetInput.value = part.lastAssetNumber || '';
-      dom.usageDeductOneCheckbox.checked = false;
-      dom.usageUpdateModal.classList.remove('hidden');
-    }
-
-    function closeUsageModal() {
-      dom.usageUpdateModal.classList.add('hidden');
-    }
-
-    function handleUsageUpdateSubmit(e) {
-      e.preventDefault();
-      const partId = dom.usagePartIdInput.value;
-      const target = pendingParts.find((p) => p.id === partId);
-      if (!target) return;
-
-      const newCurrentLoc = dom.usageCurrentLocationSelect.value || target.currentLocation;
-      const newLastLoc = dom.usageLastLocationSelect.value || target.lastUsedLocation;
-      const newWo = dom.usageLastWoInput.value.trim().toUpperCase();
-      const newAsset = dom.usageLastAssetInput.value.trim().toUpperCase();
-      const deductOne = dom.usageDeductOneCheckbox.checked;
-
-      stageMutation(
-        (arr) => {
-          const item = arr.find((p) => p.id === partId);
-          if (!item) return;
-          item.currentLocation = newCurrentLoc;
-          item.lastUsedLocation = newLastLoc;
-          item.lastWoNumber = newWo;
-          item.lastAssetNumber = newAsset;
-          if (deductOne && item.qtyAvailable > 0) {
-            item.qtyAvailable -= 1;
-            item.qtyUsed = (item.qtyUsed || 0) + 1;
-          }
-          item.updatedBy = currentMemberName;
-          item.updatedAt = Date.now();
-        },
-        `Updated Loc→${newCurrentLoc}, LastUsed→${newLastLoc}, WO→${newWo || '—'}, Asset→${newAsset || '—'}${deductOne ? ' (-1 unit)' : ''}`,
-        target.partNumber
-      );
-
-      closeUsageModal();
-      showToast(`Updated ${target.partNumber} (pending Submit)`);
-    }
-
-    function undoPendingChange() {
-      if (undoStack.length === 0) return;
-      const prev = undoStack.pop();
-      pendingParts = prev.parts;
-      pendingLogs = prev.logs;
-      renderParts();
-      updatePendingBar();
-      showToast('Reverted last unstaged action');
-    }
-
-    function submitPendingChanges() {
-      if (undoStack.length === 0) return;
-      lastSubmittedSnapshot = {
-        parts: deepClone(committedParts),
-        logs: deepClone(modificationLogs),
-      };
-      committedParts = deepClone(pendingParts);
-      modificationLogs = [...pendingLogs, ...modificationLogs].slice(0, 100);
-      undoStack = [];
-      pendingLogs = [];
-      upsertCurrentSession();
-      saveLocalState();
-      renderParts();
-      updatePendingBar();
-      showToast('All changes submitted & saved!');
-    }
-
-    function revertLastSubmit() {
-      if (!lastSubmittedSnapshot) return;
-      committedParts = deepClone(lastSubmittedSnapshot.parts);
-      pendingParts = deepClone(lastSubmittedSnapshot.parts);
-      modificationLogs = deepClone(lastSubmittedSnapshot.logs);
-      lastSubmittedSnapshot = null;
-      undoStack = [];
-      pendingLogs = [];
-      saveLocalState();
-      renderParts();
-      updatePendingBar();
-      showToast('Reverted last submitted batch');
-    }
-
-    function updatePendingBar() {
-      const count = undoStack.length;
-      if (dom.undoPendingBtn) dom.undoPendingBtn.disabled = count === 0;
-      if (dom.submitPendingBtn) dom.submitPendingBtn.disabled = count === 0;
-      dom.revertLastSubmitBtn?.classList.toggle('hidden', !lastSubmittedSnapshot || count > 0);
-
-      if (count > 0) {
-        if (dom.pendingDot) dom.pendingDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping';
-        if (dom.pendingSummaryText) {
-          dom.pendingSummaryText.textContent = `${count} unsubmitted ${count === 1 ? 'change' : 'changes'} — click Submit Changes`;
-          dom.pendingSummaryText.className = 'text-xs font-bold text-amber-300';
         }
-      } else {
-        if (dom.pendingDot) dom.pendingDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
-        if (dom.pendingSummaryText) {
-          dom.pendingSummaryText.textContent = 'All changes submitted & saved';
-          dom.pendingSummaryText.className = 'text-xs font-semibold text-slate-300';
-        }
-      }
-      if (dom.activityBadgeCount) dom.activityBadgeCount.textContent = String(modificationLogs.length);
-    }
 
-    function renderParts() {
-      const q = activeSearchQuery.trim().toLowerCase();
-      const filtered = pendingParts.filter((p) => {
-        if (activeFilter === 'New Parts' && p.category !== 'New Parts') return false;
-        if (activeFilter === 'Existing Parts' && p.category !== 'Existing Parts') return false;
-        if (activeFilter === 'always' && !p.alwaysStock) return false;
-        if (activeFilter === 'used' && (p.qtyUsed || 0) <= 0) return false;
-        if (activeFilter === 'zero' && p.qtyAvailable > 0) return false;
+        state.memberName = name;
+        state.userId = userId;
+        state.email = email;
 
-        if (!q) return true;
-        const haystack = [
-          p.partNumber,
-          p.name,
-          p.category,
-          p.currentLocation,
-          p.lastUsedLocation,
-          p.lastWoNumber,
-          p.lastAssetNumber,
-        ]
-          .join(' ')
-          .toLowerCase();
-        return haystack.includes(q);
+        sessionStorage.setItem("ps_gate_unlocked", "1");
+        localStorage.setItem("ps_member_name", name);
+        localStorage.setItem("ps_user_id", userId);
+        localStorage.setItem("ps_user_email", email);
+
+        document.getElementById("teamAccessModal").classList.add("hidden");
+        updateHeaderLabels();
+        showToast(`Welcome, ${name}!`);
       });
 
-      dom.statTotalSkus.textContent = String(pendingParts.length);
-      dom.statAvailableUnits.textContent = String(pendingParts.reduce((s, p) => s + p.qtyAvailable, 0));
-      dom.statUsedUnits.textContent = String(pendingParts.reduce((s, p) => s + (p.qtyUsed || 0), 0));
-      dom.statAlwaysStock.textContent = String(pendingParts.filter((p) => p.alwaysStock).length);
-      dom.statZeroStock.textContent = String(pendingParts.filter((p) => p.qtyAvailable === 0).length);
+      // Open Forgot Password View
+      document.getElementById("openForgotPasscodeBtn").addEventListener("click", () => {
+        document.getElementById("teamAccessForm").classList.add("hidden");
+        document.getElementById("gateModeTabs").classList.add("hidden");
+        document.getElementById("forgotPasscodeForm").classList.remove("hidden");
+        document.getElementById("resetPasscodeMsg").classList.add("hidden");
+        document.getElementById("otpSentBadge").classList.add("hidden");
+        const prefillEmail = document.getElementById("gateEmailInput").value.trim();
+        if (prefillEmail) document.getElementById("resetEmailInput").value = prefillEmail;
+      });
 
-      if (filtered.length === 0) {
-        if (dom.partsGrid) dom.partsGrid.innerHTML = '';
-        dom.emptyStateBox?.classList.remove('hidden');
-        return;
+      document.getElementById("backToSignInBtn").addEventListener("click", () => {
+        document.getElementById("forgotPasscodeForm").classList.add("hidden");
+        document.getElementById("teamAccessForm").classList.remove("hidden");
+        document.getElementById("gateModeTabs").classList.remove("hidden");
+      });
+
+      // Generate & Send 6-Digit OTP Directly to User's Registered Gmail / Email Inbox
+      document.getElementById("sendResetOtpBtn").addEventListener("click", async () => {
+        const email = document.getElementById("resetEmailInput").value.trim().toLowerCase();
+        const msgEl = document.getElementById("resetPasscodeMsg");
+        const badgeEl = document.getElementById("otpSentBadge");
+        const sendBtn = document.getElementById("sendResetOtpBtn");
+
+        msgEl.classList.add("hidden");
+        badgeEl.classList.add("hidden");
+
+        if (!email || !email.includes("@")) {
+          msgEl.textContent = "Please enter the Gmail / email address used during sign-up.";
+          msgEl.className = "text-xs font-semibold text-rose-400";
+          msgEl.classList.remove("hidden");
+          return;
+        }
+
+        // Fetch latest registered accounts from Firestore
+        if (db) {
+          try {
+            const snap = await db.collection("partsearch_rooms").doc(state.roomCode).get();
+            if (snap.exists && Array.isArray(snap.data().teamUsers)) {
+              state.teamUsers = snap.data().teamUsers;
+            }
+          } catch (_) {}
+        }
+
+        const matchedUser = state.teamUsers.find((u) => (u.email || "").toLowerCase() === email);
+        if (!matchedUser) {
+          msgEl.textContent = "No account found with this email address. Please enter the email used during sign-up.";
+          msgEl.className = "text-xs font-semibold text-rose-400";
+          msgEl.classList.remove("hidden");
+          return;
+        }
+
+        if (
+          !window.emailjs ||
+          !EMAILJS_CONFIG.publicKey ||
+          EMAILJS_CONFIG.publicKey.startsWith("YOUR_") ||
+          EMAILJS_CONFIG.serviceId.startsWith("YOUR_") ||
+          EMAILJS_CONFIG.templateId.startsWith("YOUR_")
+        ) {
+          msgEl.textContent = "EmailJS is not configured yet. Add your EmailJS Public Key, Service ID, and Template ID in index.html to deliver OTPs to Gmail.";
+          msgEl.className = "text-xs font-semibold text-amber-300";
+          msgEl.classList.remove("hidden");
+          return;
+        }
+
+        // Generate secure 6-digit OTP (stored in memory only, never displayed on screen)
+        const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+        state.activeResetOtp = {
+          code: otpCode,
+          email: email,
+          userId: matchedUser.userId,
+          expiresAt: Date.now() + 10 * 60 * 1000 // Valid for 10 minutes
+        };
+
+        sendBtn.disabled = true;
+        sendBtn.textContent = "Sending OTP...";
+
+        try {
+          await emailjs.send(
+            EMAILJS_CONFIG.serviceId,
+            EMAILJS_CONFIG.templateId,
+            {
+              to_email: email,
+              to_name: matchedUser.memberName || matchedUser.userId || "Team Member",
+              user_id: matchedUser.userId || "",
+              otp_code: otpCode,
+              app_name: "PartSearch"
+            },
+            { publicKey: EMAILJS_CONFIG.publicKey }
+          );
+
+          badgeEl.textContent = "OTP sent to inbox";
+          badgeEl.classList.remove("hidden");
+          msgEl.textContent = `A 6-digit OTP has been sent to ${email}. Check your inbox (and Spam folder) and enter the code below.`;
+          msgEl.className = "text-xs font-semibold text-emerald-300";
+          msgEl.classList.remove("hidden");
+          recordLoginAudit("OTP_SENT", `Sent password reset OTP to ${email}`, matchedUser.memberName, email, matchedUser.userId);
+        } catch (err) {
+          console.error("EmailJS send error:", err);
+          state.activeResetOtp = null;
+          msgEl.textContent = "Failed to send OTP email. Verify your EmailJS Service ID, Template ID, and Public Key.";
+          msgEl.className = "text-xs font-semibold text-rose-400";
+          msgEl.classList.remove("hidden");
+        } finally {
+          sendBtn.disabled = false;
+          sendBtn.textContent = "Resend OTP";
+        }
+      });
+
+      // Verify Inbox OTP & Save New Passcode
+      document.getElementById("forgotPasscodeForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const email = document.getElementById("resetEmailInput").value.trim().toLowerCase();
+        const enteredOtp = document.getElementById("resetOtpCodeInput").value.trim();
+        const newPasscode = document.getElementById("resetNewPasscodeInput").value.trim();
+        const msgEl = document.getElementById("resetPasscodeMsg");
+
+        if (!state.activeResetOtp || state.activeResetOtp.email !== email) {
+          msgEl.textContent = "Please click 'Generate OTP' first to receive a code in your inbox.";
+          msgEl.className = "text-xs font-semibold text-rose-400";
+          msgEl.classList.remove("hidden");
+          return;
+        }
+        if (Date.now() > state.activeResetOtp.expiresAt) {
+          state.activeResetOtp = null;
+          msgEl.textContent = "This OTP has expired. Click 'Resend OTP' to get a new code.";
+          msgEl.className = "text-xs font-semibold text-rose-400";
+          msgEl.classList.remove("hidden");
+          return;
+        }
+        if (enteredOtp !== state.activeResetOtp.code) {
+          msgEl.textContent = "Incorrect 6-digit OTP. Please check the code sent to your email inbox.";
+          msgEl.className = "text-xs font-semibold text-rose-400";
+          msgEl.classList.remove("hidden");
+          return;
+        }
+        if (newPasscode.length < 4) {
+          msgEl.textContent = "New passcode must be at least 4 characters.";
+          msgEl.className = "text-xs font-semibold text-rose-400";
+          msgEl.classList.remove("hidden");
+          return;
+        }
+
+        const userIdx = state.teamUsers.findIndex((u) => (u.email || "").toLowerCase() === email);
+        if (userIdx === -1) {
+          msgEl.textContent = "Account not found.";
+          msgEl.className = "text-xs font-semibold text-rose-400";
+          msgEl.classList.remove("hidden");
+          return;
+        }
+
+        state.teamUsers[userIdx].passcode = newPasscode;
+        state.activeResetOtp = null;
+        await saveRoomToCloud();
+        recordLoginAudit("PASSCODE_RESET", `Reset passcode via Email OTP for ${email}`, state.teamUsers[userIdx].memberName, email, state.teamUsers[userIdx].userId);
+
+        document.getElementById("resetOtpCodeInput").value = "";
+        document.getElementById("resetNewPasscodeInput").value = "";
+        document.getElementById("forgotPasscodeForm").classList.add("hidden");
+        document.getElementById("teamAccessForm").classList.remove("hidden");
+        document.getElementById("gateModeTabs").classList.remove("hidden");
+        document.getElementById("gateEmailInput").value = email;
+        document.getElementById("gateUserIdInput").value = state.teamUsers[userIdx].userId || "";
+        showToast("Passcode updated! Sign in with your new passcode.");
+      });
+
+      document.getElementById("lockTeamGateBtn").addEventListener("click", () => {
+        sessionStorage.removeItem("ps_gate_unlocked");
+        recordLoginAudit("LOCKED", "Locked team access gate");
+        openTeamAccessGate();
+      });
+
+      // ============================================================
+      // 5. STAGING, UNDO & SUBMIT BAR
+      // ============================================================
+      function pushUndoState() {
+        state.undoStack.push({
+          parts: JSON.parse(JSON.stringify(state.parts)),
+          currentLocations: [...state.currentLocations],
+          lastLocations: [...state.lastLocations],
+          stagedLogs: [...state.stagedLogs],
+          pendingChangesCount: state.pendingChangesCount
+        });
+        if (state.undoStack.length > 25) state.undoStack.shift();
       }
-      dom.emptyStateBox?.classList.add('hidden');
 
-      if (dom.partsGrid) {
-        dom.partsGrid.innerHTML = filtered
-          .map((part) => {
-            const isZero = part.qtyAvailable === 0;
-            const isLow = part.qtyAvailable > 0 && part.qtyAvailable <= 2;
-            const stockBadge = isZero
-              ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/40">0 AVAILABLE · OUT</span>`
-              : isLow
-              ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/40">${part.qtyAvailable} AVAILABLE · LOW</span>`
-              : `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">${part.qtyAvailable} AVAILABLE</span>`;
+      function stageChange(logEntry) {
+        state.pendingChangesCount += 1;
+        if (logEntry) state.stagedLogs.unshift(logEntry);
+        updateStagingBar();
+        renderAll();
+      }
 
-            const photoHtml = part.photoDataUrl
-              ? `<img src="${part.photoDataUrl}" alt="${escapeHtml(part.partNumber)}" data-action="view-photo" data-id="${part.id}" class="w-14 h-14 rounded-xl object-cover border border-slate-700 cursor-pointer shrink-0" />`
-              : '';
+      function updateStagingBar() {
+        const dot = document.getElementById("pendingDot");
+        const summary = document.getElementById("pendingSummaryText");
+        const undoBtn = document.getElementById("undoPendingBtn");
+        const submitBtn = document.getElementById("submitPendingBtn");
+        const revertBtn = document.getElementById("revertLastSubmitBtn");
+
+        if (state.pendingChangesCount > 0) {
+          dot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse";
+          summary.textContent = `${state.pendingChangesCount} unsaved change(s) ready — tap Submit Changes`;
+          undoBtn.disabled = state.undoStack.length === 0;
+          submitBtn.disabled = false;
+        } else {
+          dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400";
+          summary.textContent = "All changes submitted & saved";
+          undoBtn.disabled = true;
+          submitBtn.disabled = true;
+        }
+
+        if (state.lastSubmittedSnapshot) {
+          revertBtn.classList.remove("hidden");
+        } else {
+          revertBtn.classList.add("hidden");
+        }
+      }
+
+      document.getElementById("undoPendingBtn").addEventListener("click", () => {
+        if (!state.undoStack.length) return;
+        const prev = state.undoStack.pop();
+        state.parts = prev.parts;
+        state.currentLocations = prev.currentLocations;
+        state.lastLocations = prev.lastLocations;
+        state.stagedLogs = prev.stagedLogs;
+        state.pendingChangesCount = prev.pendingChangesCount;
+        updateStagingBar();
+        renderAll();
+        showToast("Undid last staged edit");
+      });
+
+      document.getElementById("submitPendingBtn").addEventListener("click", async () => {
+        if (state.pendingChangesCount === 0) return;
+        state.lastSubmittedSnapshot = {
+          parts: JSON.parse(JSON.stringify(state.parts)),
+          modificationLogs: JSON.parse(JSON.stringify(state.modificationLogs))
+        };
+        state.modificationLogs = [...state.stagedLogs, ...state.modificationLogs].slice(0, 150);
+        state.stagedLogs = [];
+        state.pendingChangesCount = 0;
+        state.undoStack = [];
+        updateStagingBar();
+        renderAll();
+
+        try {
+          await saveRoomToCloud();
+          showToast("Submitted & synced to team cloud!");
+        } catch (err) {
+          showToast("Saved locally — will retry cloud sync.");
+        }
+      });
+
+      document.getElementById("revertLastSubmitBtn").addEventListener("click", async () => {
+        if (!state.lastSubmittedSnapshot) return;
+        state.parts = state.lastSubmittedSnapshot.parts;
+        state.modificationLogs = state.lastSubmittedSnapshot.modificationLogs;
+        state.lastSubmittedSnapshot = null;
+        updateStagingBar();
+        renderAll();
+        await saveRoomToCloud().catch(() => {});
+        showToast("Reverted last submitted batch");
+      });
+
+      // ============================================================
+      // 6. RENDER PARTS, METRICS & ACTIVITY LOG
+      // ============================================================
+      function updateHeaderLabels() {
+        document.getElementById("activeMemberLabel").textContent = `${state.memberName} (${state.roomCode})`;
+      }
+
+      function populateLocationSelects() {
+        const curSelects = ["currentLocationSelect", "restockLocationSelect"];
+        curSelects.forEach((id) => {
+          const sel = document.getElementById(id);
+          if (!sel) return;
+          const prev = sel.value;
+          sel.innerHTML = state.currentLocations
+            .map((loc) => `<option value="${escapeHtml(loc)}">${escapeHtml(loc)}</option>`)
+            .join("");
+          if (prev && state.currentLocations.includes(prev)) sel.value = prev;
+        });
+
+        const lastSelects = ["lastUsedLocationSelect", "useLocationSelect"];
+        lastSelects.forEach((id) => {
+          const sel = document.getElementById(id);
+          if (!sel) return;
+          const prev = sel.value;
+          sel.innerHTML = state.lastLocations
+            .map((loc) => `<option value="${escapeHtml(loc)}">${escapeHtml(loc)}</option>`)
+            .join("");
+          if (prev && state.lastLocations.includes(prev)) sel.value = prev;
+        });
+      }
+
+      function renderMetrics() {
+        let totalAvailable = 0;
+        let totalUsed = 0;
+        let alwaysCount = 0;
+        let zeroCount = 0;
+
+        state.parts.forEach((p) => {
+          const left = Math.max(0, Number(p.qtyAvailable) || 0);
+          const used = Math.max(0, Number(p.qtyUsed) || 0);
+          totalAvailable += left;
+          totalUsed += used;
+          if (p.alwaysStock) alwaysCount++;
+          if (left === 0) zeroCount++;
+        });
+
+        document.getElementById("statTotalSkus").textContent = state.parts.length;
+        document.getElementById("statAvailableUnits").textContent = totalAvailable;
+        document.getElementById("statUsedUnits").textContent = totalUsed;
+        document.getElementById("statAlwaysStock").textContent = alwaysCount;
+        document.getElementById("statZeroStock").textContent = zeroCount;
+        document.getElementById("activityBadgeCount").textContent = state.modificationLogs.length + state.stagedLogs.length;
+      }
+
+      function getFilteredParts() {
+        const q = state.searchQuery.trim().toLowerCase();
+        return state.parts.filter((p) => {
+          const left = Math.max(0, Number(p.qtyAvailable) || 0);
+          const used = Math.max(0, Number(p.qtyUsed) || 0);
+
+          if (state.activeFilter === "New Parts" && p.category !== "New Parts") return false;
+          if (state.activeFilter === "Existing Parts" && p.category !== "Existing Parts") return false;
+          if (state.activeFilter === "always" && !p.alwaysStock) return false;
+          if (state.activeFilter === "used" && used <= 0) return false;
+          if (state.activeFilter === "zero" && left > 0) return false;
+
+          if (!q) return true;
+          const haystack = [
+            p.partNumber,
+            p.name,
+            p.category,
+            p.currentLocation,
+            p.lastUsedLocation,
+            p.workOrder,
+            p.assetNumber,
+            p.notes
+          ]
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(q);
+        });
+      }
+
+      function renderPartsGrid() {
+        const grid = document.getElementById("partsGrid");
+        const emptyBox = document.getElementById("emptyStateBox");
+        const filtered = getFilteredParts();
+
+        if (!filtered.length) {
+          grid.innerHTML = "";
+          emptyBox.classList.remove("hidden");
+          return;
+        }
+        emptyBox.classList.add("hidden");
+
+        grid.innerHTML = filtered
+          .map((p) => {
+            const left = Math.max(0, Number(p.qtyAvailable) || 0);
+            const used = Math.max(0, Number(p.qtyUsed) || 0);
+            const isZero = left === 0;
 
             return `
-              <article class="bg-slate-900/90 border ${isZero ? 'border-rose-500/35' : 'border-slate-800'} rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-lg">
-                <div class="space-y-2.5">
-                  <div class="flex items-start justify-between gap-2">
-                    <div class="flex items-start gap-3 min-w-0">
-                      ${photoHtml}
-                      <div class="min-w-0">
-                        <div class="flex flex-wrap items-center gap-1.5">
-                          <h3 class="text-base font-extrabold text-white tracking-tight">${escapeHtml(part.partNumber)}</h3>
-                          <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">${escapeHtml(part.category)}</span>
-                        </div>
-                        <p class="text-xs text-slate-400 truncate mt-0.5">${escapeHtml(part.name || 'Biomedical Component')}</p>
-                      </div>
+              <article class="bg-slate-900/90 border ${isZero ? "border-rose-500/40" : "border-slate-800"} rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-lg">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="space-y-1 min-w-0">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <span class="text-base font-extrabold text-white tracking-tight">${escapeHtml(p.partNumber)}</span>
+                      <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">${escapeHtml(p.category || "New Parts")}</span>
+                      ${p.alwaysStock ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">Always Stock</span>` : ""}
+                      ${isZero ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">Out of Stock</span>` : ""}
                     </div>
-                    <div class="flex flex-col items-end gap-1 shrink-0">
-                      ${stockBadge}
-                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/15 text-sky-300 border border-sky-500/30">${part.qtyUsed || 0} PARTS USED</span>
-                    </div>
+                    <p class="text-xs text-slate-300 font-medium truncate">${escapeHtml(p.name || "Unnamed Biomedical Part")}</p>
                   </div>
 
                   ${
-                    part.alwaysStock
-                      ? `<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[11px] font-semibold text-amber-300">Always Stock (No WO Needed)</div>`
-                      : ''
+                    p.photoDataUrl
+                      ? `<button type="button" data-preview-id="${escapeHtml(p.id)}" class="shrink-0">
+                          <img src="${p.photoDataUrl}" alt="${escapeHtml(p.partNumber)}" class="w-14 h-14 rounded-xl object-cover border border-slate-700 hover:border-indigo-400 transition" />
+                        </button>`
+                      : ""
                   }
+                </div>
 
-                  <div class="grid grid-cols-2 gap-2 bg-slate-950/80 border border-slate-800/90 rounded-xl p-2.5 text-xs">
-                    <div>
-                      <p class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Current Location</p>
-                      <p class="font-bold text-indigo-300 mt-0.5">${escapeHtml(part.currentLocation || 'Warehouse')}</p>
-                    </div>
-                    <div>
-                      <p class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Last Used Location</p>
-                      <p class="font-bold text-slate-200 mt-0.5">${escapeHtml(part.lastUsedLocation || '—')}</p>
-                    </div>
-                    <div>
-                      <p class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Last Work Order #</p>
-                      <p class="font-semibold text-slate-300 mt-0.5">${escapeHtml(part.lastWoNumber || '—')}</p>
-                    </div>
-                    <div>
-                      <p class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Last Asset #</p>
-                      <p class="font-semibold text-slate-300 mt-0.5">${escapeHtml(part.lastAssetNumber || '—')}</p>
-                    </div>
+                <div class="grid grid-cols-2 gap-2 bg-slate-950/75 border border-slate-800/80 rounded-xl p-2.5 text-xs">
+                  <div>
+                    <span class="text-[10px] uppercase text-slate-400 block">Available Left</span>
+                    <span class="text-base font-extrabold ${isZero ? "text-rose-400" : "text-emerald-300"}">${left}</span>
+                  </div>
+                  <div>
+                    <span class="text-[10px] uppercase text-slate-400 block">Total Used</span>
+                    <span class="text-base font-extrabold text-sky-300">${used}</span>
+                  </div>
+                  <div>
+                    <span class="text-[10px] uppercase text-slate-400 block">Current Loc</span>
+                    <span class="font-bold text-slate-200">${escapeHtml(p.currentLocation || "Warehouse")}</span>
+                  </div>
+                  <div>
+                    <span class="text-[10px] uppercase text-slate-400 block">Last Used Loc</span>
+                    <span class="font-bold text-slate-200">${escapeHtml(p.lastUsedLocation || "—")}</span>
                   </div>
                 </div>
 
+                ${
+                  p.workOrder || p.assetNumber || p.notes
+                    ? `<div class="text-[11px] text-slate-400 space-y-0.5">
+                        ${p.workOrder || p.assetNumber ? `<p>${p.workOrder ? `WO: <strong class="text-slate-200">${escapeHtml(p.workOrder)}</strong> ` : ""}${p.assetNumber ? `Asset: <strong class="text-slate-200">${escapeHtml(p.assetNumber)}</strong>` : ""}</p>` : ""}
+                        ${p.notes ? `<p class="text-slate-400 line-clamp-2">${escapeHtml(p.notes)}</p>` : ""}
+                      </div>`
+                    : ""
+                }
+
                 <div class="flex flex-wrap items-center justify-between gap-1.5 pt-2 border-t border-slate-800/80">
                   <div class="flex items-center gap-1.5">
-                    <button type="button" data-action="minus-one" data-id="${part.id}" class="px-2.5 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-xs font-extrabold text-rose-300 transition">-1 Use</button>
-                    <button type="button" data-action="plus-one" data-id="${part.id}" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-xs font-extrabold text-emerald-300 transition">+1 Restock</button>
-                    <button type="button" data-action="mark-zero" data-id="${part.id}" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 transition">Mark 0</button>
+                    <button type="button" data-action="use" data-id="${escapeHtml(p.id)}" class="px-2.5 py-1.5 rounded-xl bg-sky-600/20 hover:bg-sky-600/35 border border-sky-500/40 text-xs font-bold text-sky-300 transition">
+                      Use Part
+                    </button>
+                    <button type="button" data-action="restock" data-id="${escapeHtml(p.id)}" class="px-2.5 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/35 border border-emerald-500/40 text-xs font-bold text-emerald-300 transition">
+                      + Restock
+                    </button>
                   </div>
                   <div class="flex items-center gap-1.5">
-                    <button type="button" data-action="update-usage" data-id="${part.id}" class="px-2.5 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-xs font-semibold text-indigo-300 transition">Used / Loc</button>
-                    <button type="button" data-action="edit-part" data-id="${part.id}" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition">Edit</button>
-                    <button type="button" data-action="delete-part" data-id="${part.id}" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-900/50 text-xs font-semibold text-rose-400 transition">Del</button>
+                    <button type="button" data-action="edit" data-id="${escapeHtml(p.id)}" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200">
+                      Edit
+                    </button>
+                    <button type="button" data-action="delete" data-id="${escapeHtml(p.id)}" class="px-2.5 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-xs font-semibold text-rose-300">
+                      Delete
+                    </button>
                   </div>
                 </div>
               </article>
             `;
           })
-          .join('');
-      }
-    }
-
-    // Team Room & Activity Log Modals
-    function openTeamRoomModal() {
-      dom.memberNameInput.value = currentMemberName;
-      dom.teamRoomCodeInput.value = currentTeamRoom;
-      dom.teamRoomModal.classList.remove('hidden');
-    }
-
-    function closeTeamRoomModal() {
-      dom.teamRoomModal.classList.add('hidden');
-    }
-
-    function handleTeamRoomSubmit(e) {
-      e.preventDefault();
-      const name = dom.memberNameInput.value.trim();
-      const room = dom.teamRoomCodeInput.value.trim().toUpperCase();
-      if (!name || !room) return;
-      currentMemberName = name;
-      currentTeamRoom = room;
-      localStorage.setItem('ps_member_name', currentMemberName);
-      localStorage.setItem('ps_team_room', currentTeamRoom);
-      updateHeaderIdentity();
-      loadLocalState();
-      renderParts();
-      updatePendingBar();
-      closeTeamRoomModal();
-      showToast(`Joined room ${currentTeamRoom} as ${currentMemberName}`);
-    }
-
-    function copyTeamShareLink() {
-      const url = new URL(window.location.href);
-      url.searchParams.set('room', currentTeamRoom);
-      const tempInput = document.createElement('input');
-      tempInput.value = url.toString();
-      document.body.appendChild(tempInput);
-      tempInput.select();
-      document.execCommand('copy');
-      document.body.removeChild(tempInput);
-      showToast(`Copied link for room ${currentTeamRoom}`);
-    }
-
-    function openActivityLogModal() {
-      upsertCurrentSession();
-      saveLocalState();
-      const now = Date.now();
-      dom.activeSessionsList.innerHTML = teamSessions.length
-        ? teamSessions
-            .map((s) => {
-              const stay = formatDuration((s.sessionId === currentSessionId ? now : s.lastActiveAt) - s.enteredAt);
-              return `
-                <div class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 flex items-center justify-between text-xs">
-                  <div>
-                    <p class="font-bold text-white">${escapeHtml(s.memberName)} ${s.email ? `<span class="text-slate-400 font-normal">(${escapeHtml(s.email)})</span>` : ''} ${s.sessionId === currentSessionId ? '<span class="text-emerald-400">(You · Active)</span>' : ''}</p>
-                    <p class="text-[11px] text-slate-400">Entered: ${formatTime(s.enteredAt)}</p>
-                  </div>
-                  <span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 font-bold">Stay: ${stay}</span>
-                </div>
-              `;
-            })
-            .join('')
-        : '<p class="text-xs text-slate-500">No recorded sessions yet.</p>';
-
-      if (dom.loginAuditLogsList) {
-        dom.loginAuditLogsList.innerHTML = loginAuditLogs.length
-          ? loginAuditLogs
-              .map(
-                (item) => `
-                <div class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs space-y-0.5">
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="font-bold text-rose-300">${escapeHtml(item.eventType)} · <span class="text-white">${escapeHtml(item.memberName)}</span> <span class="text-slate-400 font-normal">(${escapeHtml(item.email)})</span></span>
-                    <span class="text-[11px] text-slate-500 shrink-0">${formatTime(item.timestamp)}</span>
-                  </div>
-                  <p class="text-slate-300">${escapeHtml(item.details)} <span class="text-slate-500">[@${escapeHtml(item.userId)}]</span></p>
-                </div>
-              `
-              )
-              .join('')
-          : '<p class="text-xs text-slate-500">No login or security events recorded yet.</p>';
+          .join("");
       }
 
-      dom.modificationLogsList.innerHTML = modificationLogs.length
-        ? modificationLogs
+      function renderAll() {
+        updateHeaderLabels();
+        populateLocationSelects();
+        renderMetrics();
+        renderPartsGrid();
+      }
+
+      // ============================================================
+      // 7. PART ADD, EDIT, USE, RESTOCK, DELETE & OCR
+      // ============================================================
+      function updateNetLeftPreview() {
+        const avail = Math.max(0, parseInt(document.getElementById("qtyAvailableInput").value || "0", 10));
+        const used = Math.max(0, parseInt(document.getElementById("qtyUsedInput").value || "0", 10));
+        const isEditing = Boolean(document.getElementById("editingPartIdInput").value);
+        const left = isEditing ? avail : Math.max(0, avail - used);
+        document.getElementById("netLeftPreview").textContent = left;
+      }
+
+      document.getElementById("qtyAvailableInput").addEventListener("input", updateNetLeftPreview);
+      document.getElementById("qtyUsedInput").addEventListener("input", updateNetLeftPreview);
+
+      function openAddOrEditModal(part = null) {
+        populateLocationSelects();
+        const form = document.getElementById("addPartForm");
+        form.reset();
+        state.draftPhotoDataUrl = "";
+        document.getElementById("draftPhotoPreviewBox").classList.add("hidden");
+        document.getElementById("ocrStatusBox").classList.add("hidden");
+
+        if (part) {
+          document.getElementById("addPartModalTitle").textContent = `Edit Part — ${part.partNumber}`;
+          document.getElementById("editingPartIdInput").value = part.id;
+          document.getElementById("partNumberInput").value = part.partNumber || "";
+          document.getElementById("partCategorySelect").value = part.category || "New Parts";
+          document.getElementById("partNameInput").value = part.name || "";
+          document.getElementById("qtyAvailableLabel").textContent = "Current Quantity Left";
+          document.getElementById("qtyAvailableInput").value = Math.max(0, Number(part.qtyAvailable) || 0);
+          document.getElementById("qtyUsedInput").value = Math.max(0, Number(part.qtyUsed) || 0);
+          document.getElementById("alwaysStockCheckbox").checked = Boolean(part.alwaysStock);
+          if (part.currentLocation) document.getElementById("currentLocationSelect").value = part.currentLocation;
+          if (part.lastUsedLocation) document.getElementById("lastUsedLocationSelect").value = part.lastUsedLocation;
+          document.getElementById("workOrderInput").value = part.workOrder || "";
+          document.getElementById("assetNumberInput").value = part.assetNumber || "";
+          document.getElementById("partNotesInput").value = part.notes || "";
+          if (part.photoDataUrl) {
+            state.draftPhotoDataUrl = part.photoDataUrl;
+            document.getElementById("draftPhotoImg").src = part.photoDataUrl;
+            document.getElementById("draftPhotoPreviewBox").classList.remove("hidden");
+          }
+        } else {
+          document.getElementById("addPartModalTitle").textContent = "Add Part to Search Catalog";
+          document.getElementById("editingPartIdInput").value = "";
+          document.getElementById("qtyAvailableLabel").textContent = "Total Quantity Received / Available";
+          document.getElementById("qtyAvailableInput").value = 1;
+          document.getElementById("qtyUsedInput").value = 0;
+        }
+        updateNetLeftPreview();
+        document.getElementById("addPartModal").classList.remove("hidden");
+      }
+
+      document.getElementById("openAddModalBtn").addEventListener("click", () => openAddOrEditModal(null));
+      document.getElementById("closeAddModalBtn").addEventListener("click", () => document.getElementById("addPartModal").classList.add("hidden"));
+      document.getElementById("cancelAddModalBtn").addEventListener("click", () => document.getElementById("addPartModal").classList.add("hidden"));
+
+      document.getElementById("addCurrentLocationBtn").addEventListener("click", () => {
+        const val = document.getElementById("newCurrentLocationInput").value.trim();
+        if (!val) return;
+        if (!state.currentLocations.includes(val)) state.currentLocations.push(val);
+        populateLocationSelects();
+        document.getElementById("currentLocationSelect").value = val;
+        document.getElementById("newCurrentLocationInput").value = "";
+      });
+
+      document.getElementById("addLastLocationBtn").addEventListener("click", () => {
+        const val = document.getElementById("newLastLocationInput").value.trim().toUpperCase();
+        if (!val) return;
+        if (!state.lastLocations.includes(val)) state.lastLocations.push(val);
+        populateLocationSelects();
+        document.getElementById("lastUsedLocationSelect").value = val;
+        document.getElementById("newLastLocationInput").value = "";
+      });
+
+      document.getElementById("addPartForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const editingId = document.getElementById("editingPartIdInput").value;
+        const partNumber = document.getElementById("partNumberInput").value.trim().toUpperCase();
+        if (!partNumber) return;
+
+        const category = document.getElementById("partCategorySelect").value;
+        const name = document.getElementById("partNameInput").value.trim();
+        const rawAvail = Math.max(0, parseInt(document.getElementById("qtyAvailableInput").value || "0", 10));
+        const rawUsed = Math.max(0, parseInt(document.getElementById("qtyUsedInput").value || "0", 10));
+        const alwaysStock = document.getElementById("alwaysStockCheckbox").checked;
+        const currentLocation = document.getElementById("currentLocationSelect").value || "Warehouse";
+        const lastUsedLocation = document.getElementById("lastUsedLocationSelect").value || "";
+        const workOrder = document.getElementById("workOrderInput").value.trim();
+        const assetNumber = document.getElementById("assetNumberInput").value.trim();
+        const notes = document.getElementById("partNotesInput").value.trim();
+
+        pushUndoState();
+
+        if (editingId) {
+          const idx = state.parts.findIndex((p) => p.id === editingId);
+          if (idx !== -1) {
+            state.parts[idx] = {
+              ...state.parts[idx],
+              partNumber,
+              category,
+              name,
+              qtyAvailable: rawAvail,
+              qtyUsed: rawUsed,
+              alwaysStock,
+              currentLocation,
+              lastUsedLocation,
+              workOrder,
+              assetNumber,
+              notes,
+              photoDataUrl: state.draftPhotoDataUrl || "",
+              updatedAt: Date.now()
+            };
+            stageChange({
+              id: generateId("log"),
+              memberName: state.memberName,
+              partNumber,
+              action: `Edited part (${rawAvail} left, ${rawUsed} used, Loc: ${currentLocation})`,
+              timestamp: Date.now()
+            });
+          }
+        } else {
+          const netLeft = Math.max(0, rawAvail - rawUsed);
+          state.parts.unshift({
+            id: generateId("part"),
+            partNumber,
+            category,
+            name,
+            qtyAvailable: netLeft,
+            qtyUsed: rawUsed,
+            alwaysStock,
+            currentLocation,
+            lastUsedLocation,
+            workOrder,
+            assetNumber,
+            notes,
+            photoDataUrl: state.draftPhotoDataUrl || "",
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+          });
+          stageChange({
+            id: generateId("log"),
+            memberName: state.memberName,
+            partNumber,
+            action: `Added part (Received: ${rawAvail}, Used: ${rawUsed} → ${netLeft} left, Loc: ${currentLocation})`,
+            timestamp: Date.now()
+          });
+        }
+
+        document.getElementById("addPartModal").classList.add("hidden");
+        showToast("Part staged — click Submit Changes to save to cloud");
+      });
+
+      // Photo compression & OCR
+      document.getElementById("triggerPhotoBtn").addEventListener("click", () => {
+        document.getElementById("partPhotoInput").click();
+      });
+
+      document.getElementById("partPhotoInput").addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const maxDim = 480;
+            let w = img.width;
+            let h = img.height;
+            if (w > maxDim || h > maxDim) {
+              if (w > h) {
+                h = Math.round((h * maxDim) / w);
+                w = maxDim;
+              } else {
+                w = Math.round((w * maxDim) / h);
+                h = maxDim;
+              }
+            }
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+            state.draftPhotoDataUrl = canvas.toDataURL("image/jpeg", 0.65);
+            document.getElementById("draftPhotoImg").src = state.draftPhotoDataUrl;
+            document.getElementById("draftPhotoPreviewBox").classList.remove("hidden");
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      document.getElementById("removeDraftPhotoBtn").addEventListener("click", () => {
+        state.draftPhotoDataUrl = "";
+        document.getElementById("draftPhotoPreviewBox").classList.add("hidden");
+      });
+
+      document.getElementById("runOcrBtn").addEventListener("click", async () => {
+        if (!state.draftPhotoDataUrl) {
+          showToast("Snap or upload a label photo first");
+          return;
+        }
+        const statusBox = document.getElementById("ocrStatusBox");
+        const statusText = document.getElementById("ocrStatusText");
+        const chips = document.getElementById("ocrChipsContainer");
+        statusBox.classList.remove("hidden");
+        statusText.textContent = "Scanning label text...";
+        chips.innerHTML = "";
+
+        try {
+          const res = await Tesseract.recognize(state.draftPhotoDataUrl, "eng");
+          const tokens = (res.data.text || "")
+            .split(/\s+/)
+            .map((t) => t.replace(/[^A-Za-z0-9\-_/]/g, "").toUpperCase())
+            .filter((t) => t.length >= 3 && /\d/.test(t));
+          const unique = [...new Set(tokens)].slice(0, 8);
+          if (!unique.length) {
+            statusText.textContent = "No part number detected — enter manually.";
+            return;
+          }
+          statusText.textContent = "Tap a detected code to fill Part Number:";
+          chips.innerHTML = unique
             .map(
-              (log) => `
-              <div class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs space-y-0.5">
+              (tok) =>
+                `<button type="button" data-ocr-tok="${escapeHtml(tok)}" class="px-2 py-1 rounded-lg bg-indigo-600/30 border border-indigo-400/40 text-xs font-bold text-white">${escapeHtml(tok)}</button>`
+            )
+            .join("");
+          chips.querySelectorAll("button").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              document.getElementById("partNumberInput").value = btn.getAttribute("data-ocr-tok");
+            });
+          });
+        } catch (err) {
+          statusText.textContent = "OCR scan unavailable — enter Part Number manually.";
+        }
+      });
+
+      // Grid Action Delegation (Use, Restock, Edit, Delete, Image Preview)
+      document.getElementById("partsGrid").addEventListener("click", (e) => {
+        const previewBtn = e.target.closest("[data-preview-id]");
+        if (previewBtn) {
+          const part = state.parts.find((p) => p.id === previewBtn.getAttribute("data-preview-id"));
+          if (part && part.photoDataUrl) {
+            document.getElementById("fullPreviewImg").src = part.photoDataUrl;
+            document.getElementById("fullPreviewCaption").textContent = `${part.partNumber} — ${part.name || ""}`;
+            document.getElementById("imagePreviewModal").classList.remove("hidden");
+          }
+          return;
+        }
+
+        const btn = e.target.closest("[data-action]");
+        if (!btn) return;
+        const action = btn.getAttribute("data-action");
+        const id = btn.getAttribute("data-id");
+        const part = state.parts.find((p) => p.id === id);
+        if (!part) return;
+
+        if (action === "edit") {
+          openAddOrEditModal(part);
+        } else if (action === "use") {
+          populateLocationSelects();
+          document.getElementById("usePartIdInput").value = part.id;
+          document.getElementById("usePartSubtitle").textContent = `${part.partNumber} (${part.qtyAvailable} available)`;
+          document.getElementById("useQtyNowInput").value = 1;
+          document.getElementById("useWorkOrderInput").value = part.workOrder || "";
+          document.getElementById("useAssetInput").value = part.assetNumber || "";
+          document.getElementById("useNoteInput").value = "";
+          document.getElementById("usePartModal").classList.remove("hidden");
+        } else if (action === "restock") {
+          populateLocationSelects();
+          document.getElementById("restockPartIdInput").value = part.id;
+          document.getElementById("restockSubtitle").textContent = `${part.partNumber} (Currently ${part.qtyAvailable} left)`;
+          document.getElementById("restockAddQtyInput").value = 1;
+          if (part.currentLocation) document.getElementById("restockLocationSelect").value = part.currentLocation;
+          document.getElementById("restockPartModal").classList.remove("hidden");
+        } else if (action === "delete") {
+          if (!confirm(`Delete part ${part.partNumber}?`)) return;
+          pushUndoState();
+          state.parts = state.parts.filter((p) => p.id !== id);
+          stageChange({
+            id: generateId("log"),
+            memberName: state.memberName,
+            partNumber: part.partNumber,
+            action: "Deleted part from catalog",
+            timestamp: Date.now()
+          });
+          showToast("Part deletion staged");
+        }
+      });
+
+      document.getElementById("closeImagePreviewBtn").addEventListener("click", () => {
+        document.getElementById("imagePreviewModal").classList.add("hidden");
+      });
+
+      // Use Part Submit
+      document.getElementById("usePartForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const id = document.getElementById("usePartIdInput").value;
+        const qtyNow = Math.max(1, parseInt(document.getElementById("useQtyNowInput").value || "1", 10));
+        const loc = document.getElementById("useLocationSelect").value;
+        const wo = document.getElementById("useWorkOrderInput").value.trim();
+        const asset = document.getElementById("useAssetInput").value.trim();
+        const note = document.getElementById("useNoteInput").value.trim();
+
+        const part = state.parts.find((p) => p.id === id);
+        if (!part) return;
+
+        pushUndoState();
+        part.qtyAvailable = Math.max(0, (Number(part.qtyAvailable) || 0) - qtyNow);
+        part.qtyUsed = (Number(part.qtyUsed) || 0) + qtyNow;
+        if (loc) part.lastUsedLocation = loc;
+        if (wo) part.workOrder = wo;
+        if (asset) part.assetNumber = asset;
+        if (note) part.notes = note;
+        part.updatedAt = Date.now();
+
+        stageChange({
+          id: generateId("log"),
+          memberName: state.memberName,
+          partNumber: part.partNumber,
+          action: `Used ${qtyNow} unit(s) at ${loc || "Facility"} (${part.qtyAvailable} left)`,
+          timestamp: Date.now()
+        });
+
+        document.getElementById("usePartModal").classList.add("hidden");
+        showToast("Usage staged — click Submit Changes");
+      });
+
+      document.getElementById("closeUseModalBtn").addEventListener("click", () => document.getElementById("usePartModal").classList.add("hidden"));
+      document.getElementById("cancelUseModalBtn").addEventListener("click", () => document.getElementById("usePartModal").classList.add("hidden"));
+
+      // Restock Submit
+      document.getElementById("restockForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const id = document.getElementById("restockPartIdInput").value;
+        const addQty = Math.max(1, parseInt(document.getElementById("restockAddQtyInput").value || "1", 10));
+        const loc = document.getElementById("restockLocationSelect").value;
+
+        const part = state.parts.find((p) => p.id === id);
+        if (!part) return;
+
+        pushUndoState();
+        part.qtyAvailable = (Number(part.qtyAvailable) || 0) + addQty;
+        if (loc) part.currentLocation = loc;
+        part.updatedAt = Date.now();
+
+        stageChange({
+          id: generateId("log"),
+          memberName: state.memberName,
+          partNumber: part.partNumber,
+          action: `Restocked +${addQty} at ${loc || part.currentLocation} (${part.qtyAvailable} left)`,
+          timestamp: Date.now()
+        });
+
+        document.getElementById("restockPartModal").classList.add("hidden");
+        showToast("Restock staged — click Submit Changes");
+      });
+
+      document.getElementById("closeRestockModalBtn").addEventListener("click", () => document.getElementById("restockPartModal").classList.add("hidden"));
+      document.getElementById("cancelRestockModalBtn").addEventListener("click", () => document.getElementById("restockPartModal").classList.add("hidden"));
+
+      // ============================================================
+      // 8. SEARCH, FILTERS, EXPORT & IMPORT
+      // ============================================================
+      const searchInput = document.getElementById("searchInput");
+      const clearSearchBtn = document.getElementById("clearSearchBtn");
+
+      searchInput.addEventListener("input", () => {
+        state.searchQuery = searchInput.value;
+        clearSearchBtn.classList.toggle("hidden", !state.searchQuery);
+        renderPartsGrid();
+      });
+
+      clearSearchBtn.addEventListener("click", () => {
+        searchInput.value = "";
+        state.searchQuery = "";
+        clearSearchBtn.classList.add("hidden");
+        renderPartsGrid();
+      });
+
+      document.querySelectorAll(".filter-tab").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".filter-tab").forEach((b) => {
+            b.classList.remove("tab-active");
+            b.classList.add("bg-slate-950");
+          });
+          btn.classList.add("tab-active");
+          btn.classList.remove("bg-slate-950");
+          state.activeFilter = btn.getAttribute("data-filter");
+          renderPartsGrid();
+        });
+      });
+
+      document.getElementById("exportJsonBtn").addEventListener("click", () => {
+        const payload = {
+          exportedAt: new Date().toISOString(),
+          roomCode: state.roomCode,
+          parts: state.parts,
+          currentLocations: state.currentLocations,
+          lastLocations: state.lastLocations,
+          modificationLogs: state.modificationLogs
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `PartSearch_${state.roomCode}_${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      document.getElementById("exportCsvBtn").addEventListener("click", () => {
+        const headers = [
+          "Part Number",
+          "Name",
+          "Category",
+          "Available Left",
+          "Total Used",
+          "Always Stock",
+          "Current Location",
+          "Last Used Location",
+          "Work Order",
+          "Asset Number",
+          "Notes"
+        ];
+        const rows = state.parts.map((p) =>
+          [
+            p.partNumber,
+            p.name,
+            p.category,
+            p.qtyAvailable,
+            p.qtyUsed,
+            p.alwaysStock ? "Yes" : "No",
+            p.currentLocation,
+            p.lastUsedLocation,
+            p.workOrder,
+            p.assetNumber,
+            p.notes
+          ]
+            .map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`)
+            .join(",")
+        );
+        const csvContent = [headers.join(","), ...rows].join("\n");
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `PartSearch_Inventory_${state.roomCode}_${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      document.getElementById("importBackupBtn").addEventListener("click", () => {
+        document.getElementById("importFileInput").click();
+      });
+
+      document.getElementById("importFileInput").addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const parsed = JSON.parse(ev.target.result);
+            if (!Array.isArray(parsed.parts)) throw new Error("Invalid backup");
+            pushUndoState();
+            state.parts = parsed.parts;
+            if (Array.isArray(parsed.currentLocations)) state.currentLocations = parsed.currentLocations;
+            if (Array.isArray(parsed.lastLocations)) state.lastLocations = parsed.lastLocations;
+            stageChange({
+              id: generateId("log"),
+              memberName: state.memberName,
+              partNumber: "BACKUP",
+              action: `Imported ${parsed.parts.length} part(s) from JSON backup`,
+              timestamp: Date.now()
+            });
+            showToast(`Imported ${parsed.parts.length} parts — click Submit Changes`);
+          } catch (_) {
+            showToast("Could not import file — invalid JSON format");
+          }
+        };
+        reader.readAsText(file);
+      });
+
+      // ============================================================
+      // 9. TEAM ROOM & ACTIVITY LOG MODALS
+      // ============================================================
+      document.getElementById("openTeamRoomBtn").addEventListener("click", () => {
+        document.getElementById("roomCodeInput").value = state.roomCode;
+        document.getElementById("memberNameInput").value = state.memberName;
+        document.getElementById("teamRoomModal").classList.remove("hidden");
+      });
+
+      document.getElementById("closeTeamRoomBtn").addEventListener("click", () => {
+        document.getElementById("teamRoomModal").classList.add("hidden");
+      });
+
+      document.getElementById("copyTeamLinkBtn").addEventListener("click", () => {
+        const base = window.location.href.split("?")[0];
+        const shareUrl = `${base}?room=${encodeURIComponent(state.roomCode)}`;
+        navigator.clipboard?.writeText(shareUrl);
+        showToast("Team link copied!");
+      });
+
+      document.getElementById("saveTeamProfileBtn").addEventListener("click", () => {
+        const newRoom = document.getElementById("roomCodeInput").value.trim().toUpperCase() || "BIOMED-TEAM-01";
+        const newName = document.getElementById("memberNameInput").value.trim() || "Tech";
+        state.roomCode = newRoom;
+        state.memberName = newName;
+        localStorage.setItem("ps_room_code", newRoom);
+        localStorage.setItem("ps_member_name", newName);
+        document.getElementById("teamRoomModal").classList.add("hidden");
+        connectRoomListener();
+        renderAll();
+        showToast(`Connected to ${newRoom} as ${newName}`);
+      });
+
+      document.getElementById("openActivityLogBtn").addEventListener("click", () => {
+        const listEl = document.getElementById("activityLogList");
+        const combined = [...state.stagedLogs, ...state.modificationLogs];
+        if (!combined.length) {
+          listEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">No activity recorded yet.</p>`;
+        } else {
+          listEl.innerHTML = combined
+            .map(
+              (item) => `
+              <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-3 text-xs space-y-1">
                 <div class="flex items-center justify-between">
-                  <span class="font-bold text-indigo-300">${escapeHtml(log.partNumber)} · <span class="text-white">${escapeHtml(log.memberName)}</span></span>
-                  <span class="text-[11px] text-slate-500">${formatTime(log.timestamp)}</span>
+                  <span class="font-bold text-indigo-300">${escapeHtml(item.partNumber)}</span>
+                  <span class="text-[10px] text-slate-500">${new Date(item.timestamp).toLocaleString()}</span>
                 </div>
-                <p class="text-slate-300">${escapeHtml(log.action)}</p>
+                <p class="text-slate-200">${escapeHtml(item.action)}</p>
+                <p class="text-[11px] text-slate-400">By: <strong class="text-slate-300">${escapeHtml(item.memberName)}</strong></p>
               </div>
             `
             )
-            .join('')
-        : '<p class="text-xs text-slate-500">No submitted modifications yet.</p>';
-
-      dom.activityLogModal.classList.remove('hidden');
-    }
-
-    function closeActivityLogModal() {
-      dom.activityLogModal.classList.add('hidden');
-    }
-
-    function updateHeaderIdentity() {
-      if (dom.activeMemberLabel) {
-        const idTag = currentUserId ? ` · @${currentUserId}` : '';
-        dom.activeMemberLabel.textContent = `${currentMemberName}${idTag} (${currentTeamRoom})`;
-      }
-      if (dom.gateRoomPreview) {
-        dom.gateRoomPreview.textContent = currentTeamRoom;
-      }
-    }
-
-    function getTeamUsersStore() {
-      try {
-        const localUsers = JSON.parse(localStorage.getItem(`ps_team_users_${currentTeamRoom}`) || '{}');
-        return { ...localUsers, ...cloudTeamUsers };
-      } catch (err) {
-        return { ...cloudTeamUsers };
-      }
-    }
-
-    function saveTeamUsersStore(usersObj) {
-      cloudTeamUsers = { ...cloudTeamUsers, ...usersObj };
-      localStorage.setItem(`ps_team_users_${currentTeamRoom}`, JSON.stringify(cloudTeamUsers));
-      saveLocalState();
-    }
-
-    function setGateMode(mode) {
-      gateMode = mode === 'register' ? 'register' : 'signin';
-      const isRegister = gateMode === 'register';
-      dom.tabSignInMode?.classList.toggle('bg-indigo-600', !isRegister);
-      dom.tabSignInMode?.classList.toggle('text-white', !isRegister);
-      dom.tabSignInMode?.classList.toggle('text-slate-400', isRegister);
-
-      dom.tabCreateAccountMode?.classList.toggle('bg-indigo-600', isRegister);
-      dom.tabCreateAccountMode?.classList.toggle('text-white', isRegister);
-      dom.tabCreateAccountMode?.classList.toggle('text-slate-400', !isRegister);
-
-      if (dom.gateEmailInput) {
-        dom.gateEmailInput.required = true;
-      }
-
-      dom.confirmPasscodeBox?.classList.toggle('hidden', !isRegister);
-      if (dom.gateConfirmPasscodeInput) {
-        dom.gateConfirmPasscodeInput.required = isRegister;
-      }
-      if (dom.gateSubmitBtn) {
-        dom.gateSubmitBtn.textContent = isRegister ? 'Sign Up & Unlock' : 'Log In & Unlock';
-      }
-      dom.accessCodeError?.classList.add('hidden');
-    }
-
-    function showGateError(msg) {
-      if (!dom.accessCodeError) return;
-      dom.accessCodeError.textContent = msg;
-      dom.accessCodeError.classList.remove('hidden');
-    }
-
-    function handleTeamAccessSubmit(e) {
-      e.preventDefault();
-      const memberName = (dom.gateMemberNameInput?.value || '').trim();
-      const email = (dom.gateEmailInput?.value || '').trim().toLowerCase();
-      const accessCode = (dom.accessCodeInput?.value || '').trim().toUpperCase();
-      const userId = (dom.gateUserIdInput?.value || '').trim().toLowerCase();
-      const passcode = dom.gatePasscodeInput?.value || '';
-      const confirmPasscode = dom.gateConfirmPasscodeInput?.value || '';
-
-      if (accessCode !== TEAM_ACCESS_CODE) {
-        recordLoginAudit('FAILED_LOGIN', 'Invalid Team Access Code attempt', memberName, email, userId);
-        saveLocalState();
-        showGateError('Invalid Team Access Code. Check with your team lead.');
-        return;
-      }
-      if (!memberName || !userId || !email || !email.includes('@')) {
-        showGateError('Please enter your Name, valid Email Address, and User ID.');
-        return;
-      }
-      if (passcode.length < 4) {
-        showGateError('Passcode must be at least 4 characters.');
-        return;
-      }
-
-      const users = getTeamUsersStore();
-      let auditEvent = 'LOGIN';
-      let auditDetail = `Logged in with email ${email}`;
-
-      if (gateMode === 'register') {
-        if (passcode !== confirmPasscode) {
-          showGateError('Passcodes do not match.');
-          return;
+            .join("");
         }
-        users[userId] = {
-          userId,
-          memberName,
-          email,
-          passcode,
-          updatedAt: Date.now(),
-        };
-        saveTeamUsersStore(users);
-        auditEvent = 'SIGN_UP';
-        auditDetail = `Created account & signed up with email ${email}`;
-      } else {
-        const existingUser = users[userId];
-        if (!existingUser) {
-          users[userId] = {
-            userId,
-            memberName,
-            email,
-            passcode,
-            updatedAt: Date.now(),
-          };
-          saveTeamUsersStore(users);
-          auditEvent = 'SIGN_UP_LOGIN';
-          auditDetail = `Registered & logged in with email ${email}`;
-        } else {
-          if (existingUser.email && existingUser.email.toLowerCase() !== email) {
-            recordLoginAudit('FAILED_LOGIN', `Email mismatch (entered ${email}, expected ${existingUser.email})`, memberName, email, userId);
-            saveLocalState();
-            showGateError('Use the same email address registered for this User ID.');
-            return;
-          }
-          if (existingUser.passcode !== passcode) {
-            recordLoginAudit('FAILED_LOGIN', 'Incorrect passcode attempt', memberName, email, userId);
-            saveLocalState();
-            showGateError('Incorrect passcode for this User ID. Use "Forgot Passcode? (Email OTP)" to reset it.');
-            return;
-          }
-          existingUser.memberName = memberName;
-          existingUser.email = email;
-          existingUser.updatedAt = Date.now();
-          saveTeamUsersStore(users);
-        }
+        document.getElementById("activityLogModal").classList.remove("hidden");
+      });
+
+      document.getElementById("closeActivityLogBtn").addEventListener("click", () => {
+        document.getElementById("activityLogModal").classList.add("hidden");
+      });
+
+      // ============================================================
+      // 10. INITIALIZE APP
+      // ============================================================
+      connectRoomListener();
+      renderAll();
+      updateStagingBar();
+
+      if (sessionStorage.getItem("ps_gate_unlocked") !== "1") {
+        openTeamAccessGate();
       }
-
-      currentMemberName = memberName;
-      currentUserId = userId;
-      currentUserEmail = email;
-      localStorage.setItem('ps_member_name', currentMemberName);
-      localStorage.setItem('ps_user_id', currentUserId);
-      localStorage.setItem('ps_user_email', currentUserEmail);
-      localStorage.setItem('ps_team_unlocked', 'true');
-
-      recordLoginAudit(auditEvent, auditDetail, currentMemberName, currentUserEmail, currentUserId);
-      upsertCurrentSession();
-      saveLocalState();
-      updateHeaderIdentity();
-      dom.accessCodeError?.classList.add('hidden');
-      dom.teamAccessModal?.classList.add('hidden');
-      showToast(`Welcome, ${currentMemberName} (${currentUserEmail})`);
-    }
-
-    function handleSendResetOtp() {
-      const code = (dom.resetAccessCodeInput?.value || '').trim().toUpperCase();
-      const userId = (dom.resetUserIdInput?.value || '').trim().toLowerCase();
-      const email = (dom.resetEmailInput?.value || '').trim().toLowerCase();
-
-      if (!dom.resetPasscodeMsg) return;
-      dom.resetPasscodeMsg.classList.remove('hidden');
-
-      if (code !== TEAM_ACCESS_CODE) {
-        dom.resetPasscodeMsg.className = 'text-xs font-semibold text-rose-400';
-        dom.resetPasscodeMsg.textContent = 'Enter a valid Team Access Code first.';
-        return;
-      }
-      if (!userId || !email || !email.includes('@')) {
-        dom.resetPasscodeMsg.className = 'text-xs font-semibold text-rose-400';
-        dom.resetPasscodeMsg.textContent = 'Enter your User ID and the Email used when signing up.';
-        return;
-      }
-
-      const users = getTeamUsersStore();
-      const account = users[userId];
-      if (!account) {
-        dom.resetPasscodeMsg.className = 'text-xs font-semibold text-rose-400';
-        dom.resetPasscodeMsg.textContent = `No account found for @${userId} in ${currentTeamRoom}.`;
-        return;
-      }
-      if (account.email && account.email.toLowerCase() !== email) {
-        dom.resetPasscodeMsg.className = 'text-xs font-semibold text-rose-400';
-        dom.resetPasscodeMsg.textContent = 'Email does not match the email used when this account signed up.';
-        return;
-      }
-
-      const otpCode = String(Math.floor(100000 + Math.random() * 900000));
-      activeResetOtp = {
-        userId,
-        email,
-        code: otpCode,
-        expiresAt: Date.now() + 10 * 60 * 1000,
-      };
-
-      if (dom.otpSentBadge) {
-        dom.otpSentBadge.textContent = `OTP Sent (${otpCode})`;
-        dom.otpSentBadge.classList.remove('hidden');
-      }
-      dom.resetPasscodeMsg.className = 'text-xs font-semibold text-emerald-300';
-      dom.resetPasscodeMsg.textContent = `6-digit OTP dispatched to ${email} (Code: ${otpCode}). Enter it below with your new passcode.`;
-      dom.resetOtpCodeInput?.focus();
-    }
-
-    function handleForgotPasscodeReset(e) {
-      e.preventDefault();
-      const code = (dom.resetAccessCodeInput?.value || '').trim().toUpperCase();
-      const userId = (dom.resetUserIdInput?.value || '').trim().toLowerCase();
-      const email = (dom.resetEmailInput?.value || '').trim().toLowerCase();
-      const enteredOtp = (dom.resetOtpCodeInput?.value || '').trim();
-      const newPasscode = dom.resetNewPasscodeInput?.value || '';
-
-      if (!dom.resetPasscodeMsg) return;
-      dom.resetPasscodeMsg.classList.remove('hidden');
-
-      if (code !== TEAM_ACCESS_CODE) {
-        dom.resetPasscodeMsg.className = 'text-xs font-semibold text-rose-400';
-        dom.resetPasscodeMsg.textContent = 'Invalid Team Access Code.';
-        return;
-      }
-      if (!activeResetOtp || activeResetOtp.userId !== userId || activeResetOtp.email !== email) {
-        dom.resetPasscodeMsg.className = 'text-xs font-semibold text-rose-400';
-        dom.resetPasscodeMsg.textContent = 'Click "Send OTP to Email" first for your User ID and registered email.';
-        return;
-      }
-      if (Date.now() > activeResetOtp.expiresAt) {
-        dom.resetPasscodeMsg.className = 'text-xs font-semibold text-rose-400';
-        dom.resetPasscodeMsg.textContent = 'OTP expired. Click "Send OTP to Email" to request a fresh code.';
-        return;
-      }
-      if (enteredOtp !== activeResetOtp.code) {
-        dom.resetPasscodeMsg.className = 'text-xs font-semibold text-rose-400';
-        dom.resetPasscodeMsg.textContent = 'Incorrect 6-digit OTP. Please check the code sent to your email.';
-        return;
-      }
-      if (newPasscode.length < 4) {
-        dom.resetPasscodeMsg.className = 'text-xs font-semibold text-rose-400';
-        dom.resetPasscodeMsg.textContent = 'New passcode must be at least 4 characters.';
-        return;
-      }
-
-      const users = getTeamUsersStore();
-      users[userId] = {
-        userId,
-        memberName: users[userId]?.memberName || currentMemberName || userId,
-        email,
-        passcode: newPasscode,
-        updatedAt: Date.now(),
-      };
-      saveTeamUsersStore(users);
-      activeResetOtp = null;
-      recordLoginAudit('PASSCODE_RESET', `Reset passcode via Email OTP sent to ${email}`, users[userId].memberName, email, userId);
-      saveLocalState();
-
-      dom.resetPasscodeMsg.className = 'text-xs font-semibold text-emerald-400';
-      dom.resetPasscodeMsg.textContent = `OTP verified! New passcode saved for @${userId}. Returning to Sign In...`;
-
-      setTimeout(() => {
-        dom.forgotPasscodeForm?.classList.add('hidden');
-        dom.teamAccessForm?.classList.remove('hidden');
-        dom.resetPasscodeMsg?.classList.add('hidden');
-        dom.otpSentBadge?.classList.add('hidden');
-        setGateMode('signin');
-        if (dom.gateUserIdInput) dom.gateUserIdInput.value = userId;
-        if (dom.gatePasscodeInput) dom.gatePasscodeInput.value = '';
-      }, 900);
-    }
-
-    function openTeamAccessGate(initialMode = 'signin') {
-      activeResetOtp = null;
-      dom.otpSentBadge?.classList.add('hidden');
-      dom.forgotPasscodeForm?.classList.add('hidden');
-      dom.teamAccessForm?.classList.remove('hidden');
-      setGateMode(initialMode);
-      if (dom.gateMemberNameInput) dom.gateMemberNameInput.value = currentMemberName === 'Biomed Tech' ? '' : currentMemberName;
-      if (dom.gateEmailInput) dom.gateEmailInput.value = currentUserEmail || '';
-      if (dom.accessCodeInput) dom.accessCodeInput.value = '';
-      if (dom.gateUserIdInput) dom.gateUserIdInput.value = currentUserId;
-      if (dom.gatePasscodeInput) dom.gatePasscodeInput.value = '';
-      if (dom.gateConfirmPasscodeInput) dom.gateConfirmPasscodeInput.value = '';
-      updateHeaderIdentity();
-      dom.accessCodeError?.classList.add('hidden');
-      dom.teamAccessModal?.classList.remove('hidden');
-      setTimeout(() => dom.gateMemberNameInput?.focus(), 50);
-    }
-
-    function checkTeamAccessOnLoad() {
-      const unlocked = localStorage.getItem('ps_team_unlocked') === 'true';
-      if (!unlocked) {
-        openTeamAccessGate('signin');
-      }
-    }
-
-    // Export / Import Backups
-    function exportJsonBackup() {
-      const payload = JSON.stringify(
-        {
-          room: currentTeamRoom,
-          exportedAt: new Date().toISOString(),
-          parts: committedParts,
-          currentLocations,
-          lastLocations,
-          modificationLogs,
-        },
-        null,
-        2
-      );
-      downloadBlob(payload, `PartSearch_${currentTeamRoom}_${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
-      showToast('Exported JSON backup');
-    }
-
-    function exportCsvBackup() {
-      const headers = ['Part Number', 'Description', 'Category', 'Available (Left)', 'Parts Used', 'Always Stock', 'Current Location', 'Last Used Location', 'Last WO #', 'Last Asset #', 'Updated By'];
-      const rows = committedParts.map((p) =>
-        [
-          p.partNumber,
-          p.name,
-          p.category,
-          p.qtyAvailable,
-          p.qtyUsed || 0,
-          p.alwaysStock ? 'Yes' : 'No',
-          p.currentLocation,
-          p.lastUsedLocation,
-          p.lastWoNumber,
-          p.lastAssetNumber,
-          p.updatedBy,
-        ]
-          .map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`)
-          .join(',')
-      );
-      downloadBlob([headers.join(','), ...rows].join('\n'), `PartSearch_${currentTeamRoom}_${new Date().toISOString().slice(0, 10)}.csv`, 'text/csv');
-      showToast('Exported CSV spreadsheet');
-    }
-
-    function downloadBlob(content, filename, type) {
-      const blob = new Blob([content], { type });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
-    function importBackupFile(file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        try {
-          const parsed = JSON.parse(ev.target.result);
-          if (!parsed || !Array.isArray(parsed.parts)) {
-            showToast('Invalid JSON backup file.');
-            return;
-          }
-          committedParts = parsed.parts.map(normalizePart);
-          pendingParts = deepClone(committedParts);
-          if (Array.isArray(parsed.currentLocations)) currentLocations = parsed.currentLocations;
-          if (Array.isArray(parsed.lastLocations)) lastLocations = parsed.lastLocations;
-          if (Array.isArray(parsed.modificationLogs)) modificationLogs = parsed.modificationLogs;
-          undoStack = [];
-          pendingLogs = [];
-          saveLocalState();
-          renderParts();
-          updatePendingBar();
-          showToast('Imported JSON backup successfully!');
-        } catch (err) {
-          showToast('Could not parse backup file.');
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    // Delegated Card Actions
-    bind(dom.partsGrid, 'click', (e) => {
-      const btn = e.target.closest('[data-action]');
-      if (!btn) return;
-      const action = btn.dataset.action;
-      const id = btn.dataset.id;
-      if (action === 'minus-one') adjustPartStock(id, -1);
-      if (action === 'plus-one') adjustPartStock(id, 1);
-      if (action === 'mark-zero') markPartZero(id);
-      if (action === 'update-usage') openUsageModal(id);
-      if (action === 'edit-part') {
-        const part = pendingParts.find((p) => p.id === id);
-        if (part) openAddPartModal(part);
-      }
-      if (action === 'delete-part') deletePartEntry(id);
-      if (action === 'view-photo') {
-        const part = pendingParts.find((p) => p.id === id);
-        if (part && part.photoDataUrl) {
-          if (dom.lightboxImg) dom.lightboxImg.src = part.photoDataUrl;
-          dom.photoLightbox?.classList.remove('hidden');
-        }
-      }
-    });
-
-    // Initialize Application on Load
-    function init() {
-      loadLocalState();
-      bindEvents();
-      updateHeaderIdentity();
-      renderParts();
-      updatePendingBar();
-      checkTeamAccessOnLoad();
-
-      setInterval(() => {
-        upsertCurrentSession();
-        saveLocalState();
-      }, 30000);
-    }
-
-    init();
+    })();
   </script>
 </body>
 </html>
